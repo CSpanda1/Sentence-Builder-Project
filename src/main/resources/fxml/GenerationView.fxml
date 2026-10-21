@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Sentence generation screen.
+  Author: Ved Mahant
+  Date: 2026-10-16
+-->
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="edu.utdallas.cs4485.team22.sentencebuilder.ui.GenerationController"
+      styleClass="screen" spacing="14">
+    <padding>
+        <Insets top="28" right="32" bottom="28" left="32"/>
+    </padding>
+
+    <Label text="Generate Sentences" styleClass="screen-title"/>
+    <Label text="Supply a start word, choose an algorithm, and generate one sentence or a random-start batch. Generated text is fed back into the corpus."
+           styleClass="screen-subtitle" wrapText="true"/>
+
+    <HBox spacing="12" alignment="CENTER_LEFT">
+        <VBox spacing="4" HBox.hgrow="ALWAYS">
+            <Label text="Start word" styleClass="field-label"/>
+            <TextField fx:id="startWordField" promptText="e.g. the"/>
+        </VBox>
+        <VBox spacing="4">
+            <Label text="Algorithm" styleClass="field-label"/>
+            <ComboBox fx:id="algorithmCombo" prefWidth="220"/>
+        </VBox>
+        <VBox spacing="4">
+            <Label text="Max words" styleClass="field-label"/>
+            <Spinner fx:id="lengthSpinner" prefWidth="100"/>
+        </VBox>
+    </HBox>
+
+    <Label fx:id="validationLabel" text="" styleClass="error-label"/>
+
+    <HBox spacing="10">
+        <Button text="Generate" styleClass="primary-button" onAction="#onGenerate"/>
+        <Button text="Batch (5)" onAction="#onBatch"/>
+        <Button text="Clear results" onAction="#onClear"/>
+    </HBox>
+
+    <Label text="Results" styleClass="field-label"/>
+    <ListView fx:id="resultsList" VBox.vgrow="ALWAYS"/>
+</VBox>

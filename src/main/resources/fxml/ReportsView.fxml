@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Reports: imported files, sentence history with duplicate flags, corpus stats.
+  Author: Ahmed Sherwani / Ved Mahant
+  Date: 2026-10-16
+-->
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="edu.utdallas.cs4485.team22.sentencebuilder.ui.ReportsController"
+      styleClass="screen" spacing="14">
+    <padding>
+        <Insets top="28" right="32" bottom="28" left="32"/>
+    </padding>
+
+    <Label text="Reports" styleClass="screen-title"/>
+    <Label text="Review import history, generated sentences (duplicates flagged), and corpus statistics."
+           styleClass="screen-subtitle" wrapText="true"/>
+
+    <TabPane VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE">
+        <Tab text="Imported files">
+            <VBox spacing="8" styleClass="tab-content">
+                <padding>
+                    <Insets top="12" right="4" bottom="4" left="4"/>
+                </padding>
+                <TableView fx:id="filesTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colFileName" text="File" prefWidth="200"/>
+                        <TableColumn fx:id="colFilePath" text="Path" prefWidth="280"/>
+                        <TableColumn fx:id="colFileWords" text="Words" prefWidth="80"/>
+                        <TableColumn fx:id="colFileUnique" text="Unique" prefWidth="80"/>
+                        <TableColumn fx:id="colFileWhen" text="Imported at" prefWidth="160"/>
+                    </columns>
+                </TableView>
+            </VBox>
+        </Tab>
+        <Tab text="Sentence history">
+            <VBox spacing="8" styleClass="tab-content">
+                <padding>
+                    <Insets top="12" right="4" bottom="4" left="4"/>
+                </padding>
+                <Label text="Duplicate sentences are marked so batch generation can be audited."
+                       styleClass="hint-label" wrapText="true"/>
+                <TableView fx:id="sentencesTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colSentText" text="Sentence" prefWidth="420"/>
+                        <TableColumn fx:id="colSentAlgo" text="Algorithm" prefWidth="160"/>
+                        <TableColumn fx:id="colSentStart" text="Start word" prefWidth="100"/>
+                        <TableColumn fx:id="colSentDup" text="Duplicate" prefWidth="90"/>
+                        <TableColumn fx:id="colSentWhen" text="Created" prefWidth="160"/>
+                    </columns>
+                </TableView>
+            </VBox>
+        </Tab>
+        <Tab text="Corpus stats">
+            <VBox spacing="12" styleClass="tab-content">
+                <padding>
+                    <Insets top="16" right="8" bottom="8" left="8"/>
+                </padding>
+                <Label fx:id="statsTotal" text="Total tokens: 0" styleClass="stat-line"/>
+                <Label fx:id="statsUnique" text="Unique words: 0" styleClass="stat-line"/>
+                <Label fx:id="statsFiles" text="Imported files: 0" styleClass="stat-line"/>
+                <Label fx:id="statsSentences" text="Generated sentences: 0" styleClass="stat-line"/>
+                <Label fx:id="statsDuplicates" text="Duplicate sentences: 0" styleClass="stat-line"/>
+                <Label fx:id="statsLastImport" text="Last import: —" styleClass="stat-line"/>
+            </VBox>
+        </Tab>
+    </TabPane>
+</VBox>

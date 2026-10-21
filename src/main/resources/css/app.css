@@ -1,0 +1,152 @@
+/*
+ * Sentence Builder – shared desktop styles.
+ * Author: Ved Mahant
+ * Date: 2026-10-16
+ */
+
+.root-pane {
+    -fx-background-color: #f3f0ea;
+    -fx-font-family: "Segoe UI", "Helvetica Neue", Avenir, sans-serif;
+    -fx-font-size: 13px;
+}
+
+.sidebar {
+    -fx-background-color: #1f2a24;
+}
+
+.brand-title {
+    -fx-text-fill: #f4f1ea;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-padding: 0 0 2 0;
+}
+
+.brand-subtitle {
+    -fx-text-fill: #a8b5ad;
+    -fx-font-size: 11px;
+    -fx-padding: 0 0 10 0;
+}
+
+.nav-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #d7ddd8;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 10 12 10 12;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+
+.nav-button:hover {
+    -fx-background-color: #2c3a32;
+}
+
+.nav-button.nav-active {
+    -fx-background-color: #3d6b54;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.content-pane {
+    -fx-background-color: #f7f4ef;
+}
+
+.screen {
+    -fx-background-color: transparent;
+}
+
+.screen-title {
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1f2a24;
+}
+
+.screen-subtitle {
+    -fx-text-fill: #5a645e;
+    -fx-padding: 0 0 8 0;
+}
+
+.field-label {
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3530;
+}
+
+.hint-label {
+    -fx-text-fill: #7a857e;
+    -fx-font-size: 11px;
+}
+
+.error-label {
+    -fx-text-fill: #a33b2b;
+    -fx-font-weight: bold;
+}
+
+.primary-button {
+    -fx-background-color: #3d6b54;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 6;
+    -fx-padding: 8 16 8 16;
+    -fx-cursor: hand;
+}
+
+.primary-button:hover {
+    -fx-background-color: #315644;
+}
+
+.primary-button:disabled {
+    -fx-opacity: 0.55;
+}
+
+.field-error {
+    -fx-border-color: #a33b2b;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 3;
+}
+
+.status-bar {
+    -fx-background-color: #e6e1d8;
+    -fx-border-color: #d2cbc0;
+    -fx-border-width: 1 0 0 0;
+}
+
+.status-label {
+    -fx-text-fill: #3a433e;
+}
+
+.stat-line {
+    -fx-font-size: 15px;
+    -fx-text-fill: #1f2a24;
+}
+
+.tab-content {
+    -fx-background-color: transparent;
+}
+
+.text-field, .text-area, .combo-box, .spinner {
+    -fx-background-radius: 4;
+}
+
+.table-view {
+    -fx-background-color: white;
+    -fx-border-color: #d2cbc0;
+}
+
+.list-view {
+    -fx-background-color: white;
+    -fx-border-color: #d2cbc0;
+}
+
+.progress-bar .bar {
+    -fx-background-color: #3d6b54;
+    -fx-background-radius: 3;
+}
+
+.progress-bar .track {
+    -fx-background-color: #ddd6cb;
+    -fx-background-radius: 3;
+}
+
+.separator *.line {
+    -fx-border-color: #3a4a41;
+    -fx-border-width: 0.5 0 0 0;
+}

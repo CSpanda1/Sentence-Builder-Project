@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Auto-complete / next-word suggestion screen.
+  Author: Ved Mahant
+  Date: 2026-10-16
+-->
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="edu.utdallas.cs4485.team22.sentencebuilder.ui.AutocompleteController"
+      styleClass="screen" spacing="14">
+    <padding>
+        <Insets top="28" right="32" bottom="28" left="32"/>
+    </padding>
+
+    <Label text="Autocomplete" styleClass="screen-title"/>
+    <Label text="Type freely. After a space, period, or comma, ranked next-word suggestions appear. Press Enter or click a suggestion to accept it. Unknown words can be added to the corpus."
+           styleClass="screen-subtitle" wrapText="true"/>
+
+    <Label text="Compose" styleClass="field-label"/>
+    <TextArea fx:id="composeArea" wrapText="true" prefRowCount="6"
+              promptText="Start typing a sentence…"/>
+
+    <Label text="Suggestions" styleClass="field-label"/>
+    <ListView fx:id="suggestionList" prefHeight="160"/>
+
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <TextField fx:id="unknownWordField" promptText="Unknown word to add" HBox.hgrow="ALWAYS"/>
+        <Button text="Add unknown word" onAction="#onAddUnknown"/>
+        <Button text="Accept selected" styleClass="primary-button" onAction="#onAcceptSuggestion"/>
+    </HBox>
+
+    <Label fx:id="messageLabel" text="" styleClass="hint-label"/>
+</VBox>
