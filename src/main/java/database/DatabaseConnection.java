@@ -16,6 +16,13 @@ import java.sql.SQLException;
 
 public class DatabaseConnection
 {
+    /**
+     *  Database connection to AWS MySQL database using JDBC.
+     * @return Establish and return the database connection
+     * @throws SQLException
+     *
+     * Written by Ahmed Sherwani October 17th 2026
+     */
     public static Connection getConnection() throws SQLException
     {
         // Retrieve database connection details from environment variables
