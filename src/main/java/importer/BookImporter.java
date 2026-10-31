@@ -144,7 +144,7 @@ public class BookImporter extends Application
      * The progress indicators and status label are updated to inform the user of the import progress.
      *
      * Some parts of the method are written by Junie AI
-     * Written by Ahmed Sherwani on October 19th 2026
+     * Written by Ahmed Sherwani on October 25th 2026
      *********************************************************************************************************************************************************************/
     private void startImportProcess() {
         // Disable the start button to prevent user from starting multiple imports at the same time
@@ -369,7 +369,7 @@ public class BookImporter extends Application
      * NOTE: If running directly in IntelliJ IDEA, run Main.java instead of BookImporter.java
      * to avoid JavaFX runtime component errors, or use 'mvn javafx:run'.
      * This method has been created by Junie AI
-     * Written by Ahmed Sherwani on October 19th 2026
+     * Written by Ahmed Sherwani on October 27th 2026
      *******************************************************************************************
      */
     public static void main(String[] args)
@@ -405,7 +405,7 @@ public class BookImporter extends Application
      *
      * ChatGPT helped with this method for extracting text, removing the underscores, and splitting the text based on punctuation and quotes.
      *
-     * Witten by Ahmed Sherwani on October 18th 2026
+     * Witten by Ahmed Sherwani on October 27th 2026
      ******************************************************************************************************************************************/
     public String[] extractSentences(String text, int startIndex, int endIndex)
     {
