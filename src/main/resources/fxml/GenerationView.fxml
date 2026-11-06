@@ -1,56 +1,58 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<!--
-  Sentence generation screen.
-  Author: Ved Mahant
-  Date: 2026-10-16
--->
-
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ComboBox?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ListView?>
-<?import javafx.scene.control.Spinner?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
-
-<VBox xmlns="http://javafx.com/javafx/21"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="edu.utdallas.cs4485.team22.sentencebuilder.ui.GenerationController"
-      styleClass="screen" spacing="14">
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.*?>
+<VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.utdallas.cs4485.team22.sentencebuilder.ui.GenerationController" styleClass="screen" spacing="20">
     <padding>
-        <Insets top="28" right="32" bottom="28" left="32"/>
+        <Insets top="24" right="28" bottom="28" left="28" />
     </padding>
-
-    <Label text="Generate Sentences" styleClass="screen-title"/>
-    <Label text="Supply a start word, choose an algorithm, and generate one sentence or a random-start batch. Generated text is fed back into the corpus."
-           styleClass="screen-subtitle" wrapText="true"/>
-
-    <HBox spacing="12" alignment="CENTER_LEFT">
-        <VBox spacing="4" HBox.hgrow="ALWAYS">
-            <Label text="Start word" styleClass="field-label"/>
-            <TextField fx:id="startWordField" promptText="e.g. the"/>
+    <HBox spacing="22" alignment="CENTER_LEFT" styleClass="hero-card">
+        <VBox spacing="12" styleClass="tool-header-copy" HBox.hgrow="ALWAYS">
+            <Label text="02 / THE GENERATOR" styleClass="hero-kicker" wrapText="true" />
+            <Label text="A little probability. Endless possibilities." styleClass="hero-title" wrapText="true" />
+            <Label text="Choose a starting word, explore three algorithms, and see your corpus come to life." styleClass="hero-subtitle" wrapText="true" />
         </VBox>
-        <VBox spacing="4">
-            <Label text="Algorithm" styleClass="field-label"/>
-            <ComboBox fx:id="algorithmCombo" prefWidth="220"/>
-        </VBox>
-        <VBox spacing="4">
-            <Label text="Max words" styleClass="field-label"/>
-            <Spinner fx:id="lengthSpinner" prefWidth="100"/>
-        </VBox>
+        <ImageView fitWidth="64" fitHeight="64" preserveRatio="true" accessibleText="UT Dallas logo">
+            <image>
+                <Image url="@../images/utd-logo.png" />
+            </image>
+        </ImageView>
     </HBox>
-
-    <Label fx:id="validationLabel" text="" styleClass="error-label"/>
-
-    <HBox spacing="10">
-        <Button text="Generate" styleClass="primary-button" onAction="#onGenerate"/>
-        <Button text="Batch (5)" onAction="#onBatch"/>
-        <Button text="Clear results" onAction="#onClear"/>
-    </HBox>
-
-    <Label text="Results" styleClass="field-label"/>
-    <ListView fx:id="resultsList" VBox.vgrow="ALWAYS"/>
+    <VBox spacing="12" styleClass="surface-card">
+        <Label text="Set the direction" styleClass="section-title" wrapText="true" />
+        <HBox spacing="12" alignment="CENTER_LEFT">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Start word" styleClass="field-label" />
+                <TextField fx:id="startWordField" promptText="e.g. the" />
+            </VBox>
+            <VBox spacing="4">
+                <Label text="Algorithm" styleClass="field-label" />
+                <ComboBox fx:id="algorithmCombo" prefWidth="220" />
+            </VBox>
+            <VBox spacing="4">
+                <Label text="Max words" styleClass="field-label" />
+                <Spinner fx:id="lengthSpinner" prefWidth="100" />
+            </VBox>
+        </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="12">
+            <Button text="Try a start word" onAction="#onTryStart" styleClass="text-button" />
+            <Label text="" wrapText="true" styleClass="algorithm-hint" fx:id="algorithmHint" HBox.hgrow="ALWAYS" minWidth="0" />
+        </HBox>
+        <Label fx:id="validationLabel" text="" styleClass="error-label" />
+        <HBox spacing="10">
+            <Button text="Generate" styleClass="primary-button" onAction="#onGenerate" />
+            <Button text="Generate 5 random starts" onAction="#onBatch" />
+            <Button text="Clear results" onAction="#onClear" fx:id="clearButton" />
+        </HBox>
+    </VBox>
+    <VBox spacing="12" styleClass="surface-card" VBox.vgrow="ALWAYS">
+        <HBox alignment="CENTER_LEFT" spacing="12">
+            <Label text="Generated sentences" styleClass="field-label" />
+            <Label text="0 in this session" styleClass="result-count" fx:id="resultCount" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Button text="Copy results" onAction="#onCopy" fx:id="copyButton" />
+        </HBox>
+        <ListView fx:id="resultsList" VBox.vgrow="ALWAYS" />
+    </VBox>
 </VBox>

@@ -31,6 +31,10 @@ public class GenerationController
     @FXML private ComboBox<GenerationAlgorithm> algorithmCombo;
     @FXML private Spinner<Integer> lengthSpinner;
     @FXML private Label validationLabel;
+    @FXML private Label algorithmHint;
+    @FXML private Label resultCount;
+    @FXML private javafx.scene.control.Button copyButton;
+    @FXML private javafx.scene.control.Button clearButton;
     @FXML private ListView<String> resultsList;
 
     private DataService dataService;
@@ -48,7 +52,24 @@ public class GenerationController
         algorithmCombo.getSelectionModel().select(GenerationAlgorithm.PROBABILITY_WEIGHTED);
         lengthSpinner.setValueFactory(
                 new SpinnerValueFactory.IntegerSpinnerValueFactory(3, 40, 12));
-        lengthSpinner.setEditable(true);
+        lengthSpinner.setEditable(false);
+        algorithmCombo.valueProperty().addListener((obs, before, after) -> describeAlgorithm());
+        describeAlgorithm();
+        startWordField.setOnAction(e -> onGenerate());
+        copyButton.disableProperty().bind(javafx.beans.binding.Bindings.isEmpty(resultsList.getItems()));
+        clearButton.disableProperty().bind(javafx.beans.binding.Bindings.isEmpty(resultsList.getItems()));
+        resultsList.getItems().addListener((javafx.collections.ListChangeListener<String>) change ->
+            resultCount.setText(resultsList.getItems().size() + " in this session"));
+        validationLabel.managedProperty().bind(validationLabel.visibleProperty());
+        validationLabel.visibleProperty().bind(validationLabel.textProperty().isNotEmpty());
+        resultsList.setPlaceholder(new Label("Your generated sentences will appear here."));
+        resultsList.setCellFactory(list -> new javafx.scene.control.ListCell<>() {
+            { prefWidthProperty().bind(list.widthProperty().subtract(24)); setMaxWidth(Double.MAX_VALUE); }
+            @Override protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty ? null : item); setWrapText(true);
+            }
+        });
     }
 
     @Override
@@ -94,7 +115,7 @@ public class GenerationController
                     lengthSpinner.getValue());
             prependResult(format(sentence));
             notifyStatus();
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException | IllegalStateException ex) {
             showValidation(ex.getMessage());
         }
     }
@@ -109,6 +130,7 @@ public class GenerationController
     public void onBatch() {
         clearValidation();
         startWordField.getStyleClass().remove("field-error");
+        try {
         List<GeneratedSentence> batch = dataService.generateBatch(
                 5,
                 algorithmCombo.getValue(),
@@ -117,6 +139,9 @@ public class GenerationController
             prependResult(format(batch.get(i)));
         }
         notifyStatus();
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            showValidation(ex.getMessage());
+        }
     }
 
     /**
@@ -129,6 +154,33 @@ public class GenerationController
     public void onClear() {
         resultsList.getItems().clear();
         clearValidation();
+    }
+
+    private void describeAlgorithm() {
+        if (algorithmCombo.getValue() == null) return;
+        algorithmHint.setText(switch (algorithmCombo.getValue()) {
+            case PROBABILITY_WEIGHTED -> "Probability-weighted · Common followers are more likely; rare followers still get a chance.";
+            case MOST_FREQUENT -> "Most frequent · Always chooses the most common known follower.";
+            case RANDOM_WALK -> "Random walk · Gives every known follower an equal chance.";
+        });
+    }
+
+    @FXML public void onTryStart() {
+        var vocabulary = dataService.listWords(null);
+        var word = vocabulary.stream().filter(edu.utdallas.cs4485.team22.sentencebuilder.model.Word::isSentenceStart)
+                .max(java.util.Comparator.comparingInt(edu.utdallas.cs4485.team22.sentencebuilder.model.Word::getFrequency))
+                .or(() -> vocabulary.stream().findFirst());
+        if (word.isEmpty()) { showValidation("Import text first to give the generator a vocabulary."); return; }
+        startWordField.setText(word.get().getText());
+        startWordField.getStyleClass().remove("field-error"); clearValidation(); startWordField.requestFocus();
+    }
+
+    @FXML public void onCopy() {
+        if (resultsList.getItems().isEmpty()) return;
+        var content = new javafx.scene.input.ClipboardContent();
+        content.putString(String.join(System.lineSeparator(), resultsList.getItems()));
+        javafx.scene.input.Clipboard.getSystemClipboard().setContent(content);
+        resultCount.setText("Copied " + resultsList.getItems().size() + " results to clipboard");
     }
 
     private String format(GeneratedSentence sentence) {

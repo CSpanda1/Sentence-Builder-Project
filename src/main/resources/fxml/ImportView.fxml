@@ -1,46 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<!--
-  Text import screen with progress bar.
-  Author: Ved Mahant
-  Date: 2026-10-16
--->
-
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ProgressBar?>
-<?import javafx.scene.control.TextArea?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
-
-<VBox xmlns="http://javafx.com/javafx/21"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="edu.utdallas.cs4485.team22.sentencebuilder.ui.ImportController"
-      styleClass="screen" spacing="14">
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.*?>
+<VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.utdallas.cs4485.team22.sentencebuilder.ui.ImportController" styleClass="screen" spacing="20">
     <padding>
-        <Insets top="28" right="32" bottom="28" left="32"/>
+        <Insets top="24" right="28" bottom="28" left="28" />
     </padding>
-
-    <Label text="Import Text" styleClass="screen-title"/>
-    <Label text="Choose a plain-text file (for example a Project Gutenberg book with the header removed). Import runs on a background thread and updates the progress bar."
-           styleClass="screen-subtitle" wrapText="true"/>
-
-    <HBox spacing="10" alignment="CENTER_LEFT">
-        <TextField fx:id="pathField" promptText="No file selected" HBox.hgrow="ALWAYS" editable="false"/>
-        <Button fx:id="browseButton" text="Browse…" onAction="#onBrowse"/>
+    <HBox spacing="22" alignment="CENTER_LEFT" styleClass="hero-card">
+        <VBox spacing="12" styleClass="tool-header-copy" HBox.hgrow="ALWAYS">
+            <Label text="01 / THE CORPUS" styleClass="hero-kicker" wrapText="true" />
+            <Label text="Turn text into possibility." styleClass="hero-title" wrapText="true" />
+            <Label text="Import a book or article to teach your workspace its vocabulary and word patterns." styleClass="hero-subtitle" wrapText="true" />
+        </VBox>
+        <ImageView fitWidth="64" fitHeight="64" preserveRatio="true" accessibleText="UT Dallas logo">
+            <image>
+                <Image url="@../images/utd-logo.png" />
+            </image>
+        </ImageView>
     </HBox>
-
-    <HBox spacing="10">
-        <Button fx:id="importButton" text="Start Import" styleClass="primary-button" onAction="#onImport"/>
-        <Button fx:id="cancelButton" text="Cancel" disable="true" onAction="#onCancel"/>
+    <HBox spacing="18" VBox.vgrow="ALWAYS">
+        <VBox spacing="12" styleClass="surface-card" HBox.hgrow="ALWAYS" prefWidth="590">
+            <Label text="01  /  Choose your source" styleClass="section-title" wrapText="true" />
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <TextField fx:id="pathField" promptText="No file selected" HBox.hgrow="ALWAYS" editable="false" />
+                <Button fx:id="browseButton" text="Browse…" onAction="#onBrowse" />
+            </HBox>
+            <HBox spacing="10">
+                <Button fx:id="importButton" text="Start Import" styleClass="primary-button" onAction="#onImport" disable="true" />
+                <Button fx:id="cancelButton" text="Cancel" disable="true" onAction="#onCancel" />
+            </HBox>
+            <Label text="02  /  Follow the import" styleClass="section-title" wrapText="true" />
+            <ProgressBar fx:id="progressBar" progress="0" maxWidth="Infinity" prefHeight="18" />
+            <Label fx:id="progressLabel" text="Choose a .txt file to get started." styleClass="hint-label" />
+            <Label text="Import log" styleClass="field-label" />
+            <TextArea fx:id="logArea" editable="false" wrapText="true" VBox.vgrow="ALWAYS" prefRowCount="8" />
+        </VBox>
+        <VBox spacing="12" styleClass="guide-card" prefWidth="245" minWidth="210">
+            <Label text="A strong corpus starts here" styleClass="section-title" wrapText="true" />
+            <Label text="TXT" styleClass="file-badge" wrapText="true" />
+            <Label text="Plain text. Rich patterns." styleClass="guide-title" wrapText="true" />
+            <Label text="Choose your own .txt file, or try the included sample to see how importing works." styleClass="guide-copy" wrapText="true" />
+            <Button text="Use sample text" onAction="#onSample" maxWidth="Infinity" fx:id="sampleButton" />
+            <Label text="BEFORE YOU IMPORT" styleClass="metric-label" wrapText="true" />
+            <Label text="Remove book headers and footers.&#10;&#10;Keep sentence punctuation.&#10;&#10;Use text you have permission to use." styleClass="guide-copy" wrapText="true" />
+            <Label text="NEXT UP" styleClass="metric-label" wrapText="true" />
+            <Label text="Open Generate to explore your new vocabulary." styleClass="guide-copy" wrapText="true" />
+        </VBox>
     </HBox>
-
-    <Label text="Progress" styleClass="field-label"/>
-    <ProgressBar fx:id="progressBar" progress="0" maxWidth="Infinity" prefHeight="18"/>
-    <Label fx:id="progressLabel" text="Idle" styleClass="hint-label"/>
-
-    <Label text="Import log" styleClass="field-label"/>
-    <TextArea fx:id="logArea" editable="false" wrapText="true" VBox.vgrow="ALWAYS" prefRowCount="8"/>
 </VBox>

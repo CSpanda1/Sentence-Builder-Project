@@ -295,6 +295,7 @@ public class StubDataService implements DataService {
             existing.setText(key);
             wordsByText.put(key, existing);
         }
+        totalTokens += Math.max(1, word.getFrequency()) - existing.getFrequency();
         existing.setFrequency(Math.max(1, word.getFrequency()));
         existing.setSentenceStart(word.isSentenceStart());
         existing.setSentenceEnd(word.isSentenceEnd());

@@ -60,6 +60,9 @@ public class WordEditorController
         colEnd.setCellValueFactory(
                 c -> new SimpleBooleanProperty(c.getValue().isSentenceEnd()));
 
+        editTextField.setEditable(false);
+        wordTable.setPlaceholder(new Label("No matching words. Try another filter or import a text file."));
+        wordTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         colWord.setSortable(true);
         colFrequency.setSortable(true);
 
@@ -135,12 +138,14 @@ public class WordEditorController
             return;
         }
 
-        selected.setText(text);
-        selected.setFrequency(freq);
-        selected.setSentenceStart(editStartCheck.isSelected());
-        selected.setSentenceEnd(editEndCheck.isSelected());
+        if (!text.equals(selected.getText())) {
+            messageLabel.setText("Word text is read-only; edit its frequency or sentence flags.");
+            return;
+        }
+        Word updated = new Word(selected.getId(), text, freq,
+                editStartCheck.isSelected(), editEndCheck.isSelected());
 
-        boolean ok = dataService.updateWord(selected);
+        boolean ok = dataService.updateWord(updated);
         if (ok) {
             messageLabel.setText("Saved \"" + text + "\".");
             reloadTable();

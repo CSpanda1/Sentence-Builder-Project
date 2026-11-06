@@ -25,6 +25,7 @@ public class ImportController implements MainController.ServiceAware, MainContro
 
     @FXML private TextField pathField;
     @FXML private Button browseButton;
+    @FXML private Button sampleButton;
     @FXML private Button importButton;
     @FXML private Button cancelButton;
     @FXML private ProgressBar progressBar;
@@ -75,6 +76,7 @@ public class ImportController implements MainController.ServiceAware, MainContro
             pathField.setText(selectedPath.toAbsolutePath().toString());
             pathField.getStyleClass().remove("field-error");
             appendLog("Selected: " + selectedPath.getFileName());
+            importButton.setDisable(false);
         }
     }
 
@@ -166,8 +168,21 @@ public class ImportController implements MainController.ServiceAware, MainContro
         }
     }
 
+    @FXML public void onSample() {
+        Path sample = Path.of("data", "sample-corpus.txt").toAbsolutePath();
+        if (!java.nio.file.Files.isRegularFile(sample)) sample = Path.of("sample-corpus.txt").toAbsolutePath();
+        if (!java.nio.file.Files.isRegularFile(sample)) {
+            progressLabel.setText("Sample text was not found. Use Browse to select a .txt file."); return;
+        }
+        selectedPath = sample; pathField.setText(sample.toString());
+        pathField.getStyleClass().remove("field-error"); importButton.setDisable(false);
+        progressLabel.setText("Sample selected. Choose Start Import to learn its word patterns.");
+        appendLog("Selected the included sample corpus.");
+    }
+
     private void setBusy(boolean busy) {
-        importButton.setDisable(busy);
+        importButton.setDisable(busy || selectedPath == null);
+        sampleButton.setDisable(busy);
         browseButton.setDisable(busy);
         cancelButton.setDisable(!busy);
     }

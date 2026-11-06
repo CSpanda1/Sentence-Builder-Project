@@ -87,12 +87,16 @@ public class AutocompleteController
      * @date 2026-10-16
      */
     private void onTextChanged(String text) {
+        if (dataService == null) return;
         if (text == null || text.isEmpty()) {
+            lastLeadingWord = "";
             suggestionList.getItems().clear();
             return;
         }
         char last = text.charAt(text.length() - 1);
         if (last != ' ' && last != '.' && last != ',') {
+            suggestionList.getItems().clear();
+            lastLeadingWord = "";
             return;
         }
         String leading = extractLeadingWord(text);
@@ -128,10 +132,10 @@ public class AutocompleteController
             return;
         }
         String word = selected.split("\\s+")[0];
-        appendWord(word);
         if (!lastLeadingWord.isEmpty()) {
             dataService.recordFollow(lastLeadingWord, word);
         }
+        appendWord(word);
         messageLabel.setText("Accepted \"" + word + "\"");
         notifyStatus();
     }

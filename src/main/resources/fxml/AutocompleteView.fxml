@@ -1,44 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<!--
-  Auto-complete / next-word suggestion screen.
-  Author: Ved Mahant
-  Date: 2026-10-16
--->
-
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ListView?>
-<?import javafx.scene.control.TextArea?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
-
-<VBox xmlns="http://javafx.com/javafx/21"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="edu.utdallas.cs4485.team22.sentencebuilder.ui.AutocompleteController"
-      styleClass="screen" spacing="14">
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.*?>
+<VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.utdallas.cs4485.team22.sentencebuilder.ui.AutocompleteController" styleClass="screen" spacing="20">
     <padding>
-        <Insets top="28" right="32" bottom="28" left="32"/>
+        <Insets top="24" right="28" bottom="28" left="28" />
     </padding>
-
-    <Label text="Autocomplete" styleClass="screen-title"/>
-    <Label text="Type freely. After a space, period, or comma, ranked next-word suggestions appear. Press Enter or click a suggestion to accept it. Unknown words can be added to the corpus."
-           styleClass="screen-subtitle" wrapText="true"/>
-
-    <Label text="Compose" styleClass="field-label"/>
-    <TextArea fx:id="composeArea" wrapText="true" prefRowCount="6"
-              promptText="Start typing a sentence…"/>
-
-    <Label text="Suggestions" styleClass="field-label"/>
-    <ListView fx:id="suggestionList" prefHeight="160"/>
-
-    <HBox spacing="10" alignment="CENTER_LEFT">
-        <TextField fx:id="unknownWordField" promptText="Unknown word to add" HBox.hgrow="ALWAYS"/>
-        <Button text="Add unknown word" onAction="#onAddUnknown"/>
-        <Button text="Accept selected" styleClass="primary-button" onAction="#onAcceptSuggestion"/>
+    <HBox spacing="22" alignment="CENTER_LEFT" styleClass="hero-card">
+        <VBox spacing="12" styleClass="tool-header-copy" HBox.hgrow="ALWAYS">
+            <Label text="03 / THE WRITING STUDIO" styleClass="hero-kicker" wrapText="true" />
+            <Label text="Find your next word." styleClass="hero-title" wrapText="true" />
+            <Label text="Write with suggestions learned from your corpus. Accept a suggestion with Enter or a double-click." styleClass="hero-subtitle" wrapText="true" />
+        </VBox>
+        <ImageView fitWidth="64" fitHeight="64" preserveRatio="true" accessibleText="UT Dallas logo">
+            <image>
+                <Image url="@../images/utd-logo.png" />
+            </image>
+        </ImageView>
     </HBox>
-
-    <Label fx:id="messageLabel" text="" styleClass="hint-label"/>
+    <HBox spacing="18" VBox.vgrow="ALWAYS">
+        <VBox spacing="12" styleClass="surface-card" HBox.hgrow="ALWAYS" prefWidth="500">
+            <Label text="Compose" styleClass="field-label" />
+            <TextArea fx:id="composeArea" wrapText="true" prefRowCount="6" promptText="Start typing a sentence…" VBox.vgrow="ALWAYS" />
+            <Label text="Tip: finish a word with a space, period, or comma to see what can follow." styleClass="guide-copy" wrapText="true" />
+        </VBox>
+        <VBox spacing="12" styleClass="surface-card" prefWidth="285" minWidth="240">
+            <Label text="Suggestions" styleClass="field-label" />
+            <ListView fx:id="suggestionList" prefHeight="160" VBox.vgrow="ALWAYS" />
+        </VBox>
+    </HBox>
+    <VBox spacing="12" styleClass="surface-card">
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <TextField fx:id="unknownWordField" promptText="Unknown word to add" HBox.hgrow="ALWAYS" />
+            <Button text="Add unknown word" onAction="#onAddUnknown" />
+            <Button text="Accept selected" styleClass="primary-button" onAction="#onAcceptSuggestion" />
+        </HBox>
+        <Label fx:id="messageLabel" text="" styleClass="hint-label" />
+    </VBox>
 </VBox>

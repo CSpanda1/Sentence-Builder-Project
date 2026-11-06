@@ -53,6 +53,22 @@ public class ReportsController
     @FXML private Label statsDuplicates;
     @FXML private Label statsLastImport;
 
+    private Runnable importNavigator;
+    public void setImportNavigator(Runnable action) { importNavigator = action; }
+    private javafx.scene.Node emptyState(String icon, String title, String copy) {
+        var box = new javafx.scene.layout.VBox(12);
+        box.setAlignment(javafx.geometry.Pos.CENTER);
+        box.setMaxWidth(390);
+        var glyph = new Label(icon); glyph.getStyleClass().add("empty-icon");
+        var heading = new Label(title); heading.getStyleClass().add("empty-title");
+        var hint = new Label(copy); hint.setWrapText(true); hint.setMaxWidth(320);
+        hint.setTextAlignment(javafx.scene.text.TextAlignment.CENTER); hint.getStyleClass().add("guide-copy");
+        var button = new javafx.scene.control.Button("Import your first text  →");
+        button.getStyleClass().add("primary-button");
+        button.setOnAction(event -> { if (importNavigator != null) importNavigator.run(); });
+        box.getChildren().addAll(glyph, heading, hint, button);
+        return box;
+    }
     private DataService dataService;
 
     /**
@@ -63,6 +79,10 @@ public class ReportsController
      */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        filesTable.setPlaceholder(emptyState("▤", "Your next chapter starts here", "Import a text file to see its word counts and import history in this workspace."));
+        sentencesTable.setPlaceholder(emptyState("✦", "A blank page, full of potential", "Import a corpus, then open Generate to create your first sentences."));
+        filesTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        sentencesTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         colFileName.setCellValueFactory(
                 c -> new SimpleStringProperty(c.getValue().getFileName()));
         colFilePath.setCellValueFactory(
@@ -119,10 +139,10 @@ public class ReportsController
         sentencesTable.setItems(FXCollections.observableArrayList(sentences));
 
         long dupes = sentences.stream().filter(GeneratedSentence::isDuplicate).count();
-        statsTotal.setText("Total tokens: " + dataService.getTotalWordCount());
-        statsUnique.setText("Unique words: " + dataService.getUniqueWordCount());
-        statsFiles.setText("Imported files: " + files.size());
-        statsSentences.setText("Generated sentences: " + sentences.size());
+        statsTotal.setText(String.format("%,d", dataService.getTotalWordCount()));
+        statsUnique.setText(String.format("%,d", dataService.getUniqueWordCount()));
+        statsFiles.setText(String.format("%,d", files.size()));
+        statsSentences.setText(String.format("%,d", sentences.size()));
         statsDuplicates.setText("Duplicate sentences: " + dupes);
         statsLastImport.setText("Last import: "
                 + dataService.getLastImportName().orElse("—"));
