@@ -93,9 +93,11 @@ public class StubDataService implements DataService {
             if (cancelRequested.get()) {
                 throw new InterruptedException("Import cancelled");
             }
-            // Simulate work so the progress bar is visible.
-            Thread.sleep(8);
-            if (progressCallback != null) {
+            // Light delay so the progress bar is visible without making large books crawl.
+            if (size < 500 || i % Math.max(1, size / 100) == 0) {
+                Thread.sleep(size < 500 ? 8 : 2);
+            }
+            if (progressCallback != null && (i % 50 == 0 || i == tokens.size() - 1)) {
                 progressCallback.accept((i + 1) / (double) size);
             }
         }

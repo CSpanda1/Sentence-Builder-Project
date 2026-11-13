@@ -24,12 +24,13 @@
     </padding>
 
     <Label text="Import Text" styleClass="screen-title"/>
-    <Label text="Choose a plain-text file (for example a Project Gutenberg book with the header removed). Import runs on a background thread and updates the progress bar."
+    <Label text="Import a plain-text / Project Gutenberg book. The team book is Alice’s Adventures in Wonderland (pg11.txt). Import runs on a background thread with a progress bar."
            styleClass="screen-subtitle" wrapText="true"/>
 
     <HBox spacing="10" alignment="CENTER_LEFT">
         <TextField fx:id="pathField" promptText="No file selected" HBox.hgrow="ALWAYS" editable="false"/>
         <Button fx:id="browseButton" text="Browse…" onAction="#onBrowse"/>
+        <Button fx:id="projectBookButton" text="Use project book (pg11)" onAction="#onUseProjectBook"/>
     </HBox>
 
     <HBox spacing="10">

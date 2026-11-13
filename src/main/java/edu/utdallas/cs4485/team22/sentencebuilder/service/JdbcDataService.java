@@ -1,15 +1,19 @@
 package edu.utdallas.cs4485.team22.sentencebuilder.service;
 
+import edu.utdallas.cs4485.team22.sentencebuilder.autocomplete.AutoCompleteRecorder;
 import edu.utdallas.cs4485.team22.sentencebuilder.db.DatabaseConnection;
-import edu.utdallas.cs4485.team22.sentencebuilder.generation.FollowerPicker;
-import edu.utdallas.cs4485.team22.sentencebuilder.importing.TextTokenizer;
+import edu.utdallas.cs4485.team22.sentencebuilder.generation.Follower;
+import edu.utdallas.cs4485.team22.sentencebuilder.generation.FollowerProvider;
+import edu.utdallas.cs4485.team22.sentencebuilder.generation.GeneratorFactory;
+import edu.utdallas.cs4485.team22.sentencebuilder.generation.SentenceGenerator;
+import edu.utdallas.cs4485.team22.sentencebuilder.generation.WordNormalizer;
+import edu.utdallas.cs4485.team22.sentencebuilder.importing.BookCorpusImporter;
 import edu.utdallas.cs4485.team22.sentencebuilder.model.GeneratedSentence;
 import edu.utdallas.cs4485.team22.sentencebuilder.model.GenerationAlgorithm;
 import edu.utdallas.cs4485.team22.sentencebuilder.model.ImportedFile;
 import edu.utdallas.cs4485.team22.sentencebuilder.model.Word;
 import edu.utdallas.cs4485.team22.sentencebuilder.model.WordPair;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -18,95 +22,48 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.DoubleConsumer;
 
 /**
- * MySQL-backed {@link DataService} using plain JDBC (WP3–WP6 + WP8–WP9).
+ * MySQL JDBC data layer implementing Umair's schema and wiring Ahmed's importer
+ * plus Umair's generation / autocomplete contracts.
  *
  * @author Nirav Rohra
- * @date 2026-10-16
+ * @author Ahmed Sherwani
+ * @author Umair Malik
+ * @date 2026-11-13
  */
-public class JdbcDataService implements DataService {
+public class JdbcDataService implements DataService, FollowerProvider, AutoCompleteRecorder {
 
     private final DatabaseConnection database;
-    private final FollowerPicker picker = new FollowerPicker(new Random());
     private final AtomicBoolean cancelRequested = new AtomicBoolean(false);
+    private final Random random = new Random();
 
-    /**
-     * @param database connection helper
-     * @author Nirav Rohra
-     * @date 2026-10-16
-     */
     public JdbcDataService(DatabaseConnection database) {
         this.database = database;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @author Ahmed Sherwani
-     * @author Nirav Rohra
-     * @date 2026-10-16
-     */
     @Override
     public ImportedFile importText(Path path, DoubleConsumer progressCallback) throws Exception {
         cancelRequested.set(false);
-        String content = Files.readString(path);
-        List<String> tokens = TextTokenizer.tokenize(content);
-        if (tokens.isEmpty()) {
-            throw new IllegalArgumentException("File contained no importable words");
-        }
-
+        BookCorpusImporter importer = new BookCorpusImporter(cancelRequested);
         try (Connection conn = database.open()) {
             conn.setAutoCommit(false);
             try {
-                Set<String> unique = new HashSet<>();
-                boolean atStart = true;
-                String previous = null;
-                int size = tokens.size();
-
-                for (int i = 0; i < size; i++) {
-                    if (cancelRequested.get()) {
-                        conn.rollback();
-                        throw new InterruptedException("Import cancelled");
-                    }
-                    String token = tokens.get(i);
-                    String word = TextTokenizer.bareWord(token);
-                    boolean end = TextTokenizer.isSentenceEnd(token);
-                    unique.add(word);
-
-                    long wordId = upsertWord(conn, word, atStart, end);
-                    if (previous != null) {
-                        long prevId = findWordId(conn, previous)
-                                .orElseThrow(() -> new SQLException("Missing previous word"));
-                        upsertPair(conn, prevId, wordId);
-                    }
-                    previous = word;
-                    atStart = end;
-
-                    if (progressCallback != null && (i % 25 == 0 || i == size - 1)) {
-                        progressCallback.accept((i + 1) / (double) size);
-                    }
-                }
-
-                ImportedFile record = insertImportedFile(
-                        conn,
-                        path.getFileName().toString(),
-                        path.toAbsolutePath().toString(),
-                        tokens.size(),
-                        unique.size());
+                BookCorpusImporter.ImportResult result =
+                        importer.importBook(conn, path, progressCallback);
                 conn.commit();
-                if (progressCallback != null) {
-                    progressCallback.accept(1.0);
-                }
-                return record;
+                return new ImportedFile(
+                        result.fileId(),
+                        result.fileName(),
+                        result.filePath(),
+                        result.wordCount(),
+                        result.uniqueWordCount(),
+                        LocalDateTime.now());
             } catch (Exception e) {
                 conn.rollback();
                 throw e;
@@ -121,55 +78,35 @@ public class JdbcDataService implements DataService {
         cancelRequested.set(true);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @author Umair Malik
-     * @author Nirav Rohra
-     * @date 2026-10-16
-     */
     @Override
     public GeneratedSentence generate(String startWord, GenerationAlgorithm algorithm, int maxLength) {
-        String seed = normalize(startWord);
+        String seed = WordNormalizer.normalize(startWord);
         if (seed.isEmpty()) {
             throw new IllegalArgumentException("Start word is required");
         }
-
+        SentenceGenerator generator = GeneratorFactory.create(algorithm, this, random);
+        String text = generator.generate(seed, maxLength);
         try (Connection conn = database.open()) {
-            ensureWordExists(conn, seed, true, false);
-
-            List<String> parts = new ArrayList<>();
-            parts.add(capitalize(seed));
-            String current = seed;
-            int limit = Math.max(2, Math.min(maxLength, 40));
-            List<String> fallback = listWordTexts(conn, 500);
-
-            for (int i = 1; i < limit; i++) {
-                List<WordPair> pairs = suggestNext(conn, current, 50);
-                Optional<String> next = picker.pick(pairs, algorithm, fallback);
-                if (next.isEmpty()) {
-                    break;
-                }
-                String follower = next.get();
-                parts.add(follower);
-                current = follower;
-                Optional<Word> w = findWord(conn, follower);
-                if (w.isPresent() && w.get().isSentenceEnd() && i > 2) {
-                    break;
-                }
+            conn.setAutoCommit(false);
+            try {
+                ensureWord(conn, seed, 0, 1, 0);
+                Integer startId = findWordId(conn, seed).map(Long::intValue).orElse(null);
+                boolean duplicate = sentenceTextExists(conn, text);
+                long sentenceId = insertSentence(conn, text, startId, "GENERATED");
+                insertGeneratedDetail(conn, sentenceId, generator.getName(), duplicate, true);
+                // Feed back into corpus (WP6).
+                feedSentenceIntoCorpus(conn, text);
+                updateGeneratedAddedFlag(conn, sentenceId, true);
+                conn.commit();
+                return new GeneratedSentence(
+                        sentenceId, text, generator.getName(), seed,
+                        LocalDateTime.now(), duplicate);
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
             }
-
-            String text = String.join(" ", parts);
-            if (!text.endsWith(".")) {
-                text = text + ".";
-            }
-            boolean duplicate = sentenceExists(conn, text);
-            GeneratedSentence stored = insertSentence(
-                    conn, text, algorithm.getDisplayName(), seed, duplicate);
-
-            // Feed generated sentence back into the corpus (plan WP6).
-            feedSentenceIntoCorpus(conn, text);
-            return stored;
         } catch (SQLException e) {
             throw new IllegalStateException("Generation failed: " + e.getMessage(), e);
         }
@@ -177,46 +114,53 @@ public class JdbcDataService implements DataService {
 
     @Override
     public List<GeneratedSentence> generateBatch(int count, GenerationAlgorithm algorithm, int maxLength) {
-        List<String> starts;
-        try (Connection conn = database.open()) {
-            starts = listSentenceStartWords(conn);
-            if (starts.isEmpty()) {
-                starts = listWordTexts(conn, 200);
+        SentenceGenerator generator = GeneratorFactory.create(algorithm, this, random);
+        List<String> texts = generator.generateBatch(count, maxLength);
+        List<GeneratedSentence> stored = new ArrayList<>();
+        for (String text : texts) {
+            String start = text.isEmpty() ? "" : text.split("\\s+")[0].replace(".", "").toLowerCase();
+            try (Connection conn = database.open()) {
+                conn.setAutoCommit(false);
+                try {
+                    Integer startId = findWordId(conn, WordNormalizer.normalize(start))
+                            .map(Long::intValue).orElse(null);
+                    boolean duplicate = sentenceTextExists(conn, text);
+                    long sentenceId = insertSentence(conn, text, startId, "GENERATED");
+                    insertGeneratedDetail(conn, sentenceId, generator.getName(), duplicate, true);
+                    feedSentenceIntoCorpus(conn, text);
+                    conn.commit();
+                    stored.add(new GeneratedSentence(
+                            sentenceId, text, generator.getName(), start,
+                            LocalDateTime.now(), duplicate));
+                } catch (SQLException e) {
+                    conn.rollback();
+                    throw e;
+                } finally {
+                    conn.setAutoCommit(true);
+                }
+            } catch (SQLException e) {
+                throw new IllegalStateException("Batch generation failed: " + e.getMessage(), e);
             }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Batch start lookup failed: " + e.getMessage(), e);
         }
-        if (starts.isEmpty()) {
-            throw new IllegalStateException("Corpus is empty; import text first");
-        }
-
-        Random random = new Random();
-        List<GeneratedSentence> batch = new ArrayList<>();
-        int n = Math.max(1, Math.min(count, 50));
-        for (int i = 0; i < n; i++) {
-            String start = starts.get(random.nextInt(starts.size()));
-            batch.add(generate(start, algorithm, maxLength));
-        }
-        return batch;
+        return stored;
     }
 
     @Override
     public List<WordPair> suggestNext(String leadingWord, int limit) {
-        try (Connection conn = database.open()) {
-            return suggestNext(conn, normalize(leadingWord), limit);
-        } catch (SQLException e) {
-            throw new IllegalStateException("Suggest failed: " + e.getMessage(), e);
-        }
+        return getFollowers(WordNormalizer.normalize(leadingWord)).stream()
+                .limit(Math.max(1, limit))
+                .map(f -> new WordPair(leadingWord, f.getWordText(), f.getFollowCount()))
+                .toList();
     }
 
     @Override
     public Word addOrIncrementWord(String wordText) {
-        String key = normalize(wordText);
+        String key = WordNormalizer.normalize(wordText);
         if (key.isEmpty()) {
             throw new IllegalArgumentException("Word cannot be empty");
         }
         try (Connection conn = database.open()) {
-            upsertWord(conn, key, false, false);
+            ensureWord(conn, key, 1, 0, 0);
             return findWord(conn, key).orElseThrow();
         } catch (SQLException e) {
             throw new IllegalStateException("Add word failed: " + e.getMessage(), e);
@@ -225,29 +169,116 @@ public class JdbcDataService implements DataService {
 
     @Override
     public void recordFollow(String leadingWord, String followingWord) {
-        String lead = normalize(leadingWord);
-        String follow = normalize(followingWord);
+        incrementFollowCount(leadingWord, followingWord);
+    }
+
+    @Override
+    public void addWordIfMissing(String wordText) {
+        String key = WordNormalizer.normalize(wordText);
+        if (key.isEmpty()) {
+            return;
+        }
+        try (Connection conn = database.open()) {
+            if (findWordId(conn, key).isEmpty()) {
+                ensureWord(conn, key, 1, 0, 0);
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("addWordIfMissing failed: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void incrementFollowCount(String firstWord, String nextWord) {
+        String lead = WordNormalizer.normalize(firstWord);
+        String follow = WordNormalizer.normalize(nextWord);
         if (lead.isEmpty() || follow.isEmpty()) {
             return;
         }
         try (Connection conn = database.open()) {
-            long leadId = upsertWord(conn, lead, false, false);
-            long followId = upsertWord(conn, follow, false, false);
-            upsertPair(conn, leadId, followId);
-            recordAutocompleteEvent(conn, leadId, followId, lead, follow, false);
+            long leadId = ensureWord(conn, lead, 0, 0, 0);
+            long followId = ensureWord(conn, follow, 0, 0, 0);
+            String sql = """
+                    INSERT INTO follows (first_word_id, next_word_id, follow_count)
+                    VALUES (?, ?, 1)
+                    ON DUPLICATE KEY UPDATE follow_count = follow_count + 1
+                    """;
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setLong(1, leadId);
+                ps.setLong(2, followId);
+                ps.executeUpdate();
+            }
         } catch (SQLException e) {
-            throw new IllegalStateException("Record follow failed: " + e.getMessage(), e);
+            throw new IllegalStateException("incrementFollowCount failed: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public List<Follower> getFollowers(String wordText) {
+        String sql = """
+                SELECT w2.word_text, f.follow_count
+                FROM follows f
+                JOIN word w1 ON w1.word_id = f.first_word_id
+                JOIN word w2 ON w2.word_id = f.next_word_id
+                WHERE w1.word_text = ?
+                ORDER BY f.follow_count DESC
+                """;
+        try (Connection conn = database.open();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, WordNormalizer.normalize(wordText));
+            try (ResultSet rs = ps.executeQuery()) {
+                List<Follower> list = new ArrayList<>();
+                while (rs.next()) {
+                    list.add(new Follower(rs.getString(1), rs.getInt(2)));
+                }
+                return list;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("getFollowers failed: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public int getTotalCount(String wordText) {
+        return scalarInt("SELECT total_count FROM word WHERE word_text = ?",
+                WordNormalizer.normalize(wordText));
+    }
+
+    @Override
+    public int getEndCount(String wordText) {
+        return scalarInt("SELECT end_count FROM word WHERE word_text = ?",
+                WordNormalizer.normalize(wordText));
+    }
+
+    @Override
+    public String getRandomStartWord() {
+        String sql = """
+                SELECT word_text FROM word
+                WHERE start_count > 0
+                ORDER BY RAND() LIMIT 1
+                """;
+        try (Connection conn = database.open();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getString(1);
+            }
+            // Fall back to any word.
+            try (PreparedStatement ps2 = conn.prepareStatement(
+                    "SELECT word_text FROM word ORDER BY RAND() LIMIT 1");
+                 ResultSet rs2 = ps2.executeQuery()) {
+                return rs2.next() ? rs2.getString(1) : null;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("getRandomStartWord failed: " + e.getMessage(), e);
         }
     }
 
     @Override
     public List<Word> listWords(String filter) {
-        String f = filter == null ? "" : filter.trim().toLowerCase(Locale.ROOT);
+        String f = filter == null ? "" : filter.trim().toLowerCase();
         String sql = f.isEmpty()
-                ? "SELECT word_id, word_text, frequency, is_sentence_start, is_sentence_end "
-                + "FROM words ORDER BY word_text"
-                : "SELECT word_id, word_text, frequency, is_sentence_start, is_sentence_end "
-                + "FROM words WHERE word_text LIKE ? ORDER BY word_text";
+                ? "SELECT word_id, word_text, total_count, start_count, end_count FROM word ORDER BY word_text"
+                : "SELECT word_id, word_text, total_count, start_count, end_count FROM word WHERE word_text LIKE ? ORDER BY word_text";
         try (Connection conn = database.open();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             if (!f.isEmpty()) {
@@ -261,179 +292,163 @@ public class JdbcDataService implements DataService {
                 return list;
             }
         } catch (SQLException e) {
-            throw new IllegalStateException("List words failed: " + e.getMessage(), e);
+            throw new IllegalStateException("listWords failed: " + e.getMessage(), e);
         }
     }
 
     @Override
     public boolean updateWord(Word word) {
-        String sql = "UPDATE words SET word_text = ?, frequency = ?, "
-                + "is_sentence_start = ?, is_sentence_end = ? WHERE word_id = ?";
+        String sql = """
+                UPDATE word
+                SET word_text = ?, total_count = ?,
+                    start_count = ?, end_count = ?
+                WHERE word_id = ?
+                """;
         try (Connection conn = database.open();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, normalize(word.getText()));
+            ps.setString(1, WordNormalizer.normalize(word.getText()));
             ps.setInt(2, Math.max(1, word.getFrequency()));
-            ps.setBoolean(3, word.isSentenceStart());
-            ps.setBoolean(4, word.isSentenceEnd());
+            ps.setInt(3, word.isSentenceStart() ? Math.max(1, word.getStartCount()) : 0);
+            ps.setInt(4, word.isSentenceEnd() ? Math.max(1, word.getEndCount()) : 0);
             ps.setLong(5, word.getId());
             return ps.executeUpdate() == 1;
         } catch (SQLException e) {
-            throw new IllegalStateException("Update word failed: " + e.getMessage(), e);
+            throw new IllegalStateException("updateWord failed: " + e.getMessage(), e);
         }
     }
 
     @Override
     public Optional<Word> findWord(String text) {
         try (Connection conn = database.open()) {
-            return findWord(conn, normalize(text));
+            return findWord(conn, WordNormalizer.normalize(text));
         } catch (SQLException e) {
-            throw new IllegalStateException("Find word failed: " + e.getMessage(), e);
+            throw new IllegalStateException("findWord failed: " + e.getMessage(), e);
         }
     }
 
     @Override
     public List<ImportedFile> listImportedFiles() {
-        String sql = "SELECT file_id, file_name, file_path, word_count, unique_word_count, imported_at "
-                + "FROM imported_files ORDER BY imported_at DESC";
+        String sql = """
+                SELECT file_id, file_name, COALESCE(file_path, ''), word_count,
+                       unique_word_count, import_time
+                FROM imported_file
+                ORDER BY import_time DESC
+                """;
         try (Connection conn = database.open();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             List<ImportedFile> list = new ArrayList<>();
             while (rs.next()) {
                 list.add(new ImportedFile(
-                        rs.getLong("file_id"),
-                        rs.getString("file_name"),
-                        rs.getString("file_path"),
-                        rs.getInt("word_count"),
-                        rs.getInt("unique_word_count"),
-                        rs.getTimestamp("imported_at").toLocalDateTime()));
+                        rs.getLong(1),
+                        rs.getString(2),
+                        rs.getString(3),
+                        rs.getInt(4),
+                        rs.getInt(5),
+                        rs.getTimestamp(6).toLocalDateTime()));
             }
             return list;
         } catch (SQLException e) {
-            throw new IllegalStateException("List imports failed: " + e.getMessage(), e);
+            throw new IllegalStateException("listImportedFiles failed: " + e.getMessage(), e);
         }
     }
 
     @Override
     public List<GeneratedSentence> listSentences() {
-        String sql = "SELECT sentence_id, sentence_text, algorithm, start_word, is_duplicate, created_at "
-                + "FROM generated_sentences ORDER BY created_at DESC";
+        String sql = """
+                SELECT s.sentence_id, s.sentence_text, COALESCE(g.algorithm, 'BOOK'),
+                       COALESCE(w.word_text, ''), s.created_at, COALESCE(g.is_duplicate, FALSE)
+                FROM sentence s
+                LEFT JOIN generated_sentence g ON g.sentence_id = s.sentence_id
+                LEFT JOIN word w ON w.word_id = s.start_word_id
+                WHERE s.sentence_type IN ('GENERATED', 'TYPED')
+                ORDER BY s.created_at DESC
+                """;
         try (Connection conn = database.open();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             List<GeneratedSentence> list = new ArrayList<>();
             while (rs.next()) {
                 list.add(new GeneratedSentence(
-                        rs.getLong("sentence_id"),
-                        rs.getString("sentence_text"),
-                        rs.getString("algorithm"),
-                        rs.getString("start_word"),
-                        rs.getTimestamp("created_at").toLocalDateTime(),
-                        rs.getBoolean("is_duplicate")));
+                        rs.getLong(1),
+                        rs.getString(2),
+                        rs.getString(3),
+                        rs.getString(4),
+                        rs.getTimestamp(5).toLocalDateTime(),
+                        rs.getBoolean(6)));
             }
             return list;
         } catch (SQLException e) {
-            throw new IllegalStateException("List sentences failed: " + e.getMessage(), e);
+            throw new IllegalStateException("listSentences failed: " + e.getMessage(), e);
         }
     }
 
     @Override
     public int getTotalWordCount() {
-        String sql = "SELECT COALESCE(SUM(frequency), 0) FROM words";
-        try (Connection conn = database.open();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            rs.next();
-            return rs.getInt(1);
-        } catch (SQLException e) {
-            throw new IllegalStateException("Total count failed: " + e.getMessage(), e);
-        }
+        return scalarInt("SELECT COALESCE(SUM(total_count), 0) FROM word", null);
     }
 
     @Override
     public int getUniqueWordCount() {
-        String sql = "SELECT COUNT(*) FROM words";
-        try (Connection conn = database.open();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            rs.next();
-            return rs.getInt(1);
-        } catch (SQLException e) {
-            throw new IllegalStateException("Unique count failed: " + e.getMessage(), e);
-        }
+        return scalarInt("SELECT COUNT(*) FROM word", null);
     }
 
     @Override
     public Optional<String> getLastImportName() {
-        String sql = "SELECT file_name FROM imported_files ORDER BY imported_at DESC LIMIT 1";
+        String sql = "SELECT file_name FROM imported_file ORDER BY import_time DESC LIMIT 1";
         try (Connection conn = database.open();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) {
-                return Optional.ofNullable(rs.getString(1));
-            }
-            return Optional.empty();
+            return rs.next() ? Optional.ofNullable(rs.getString(1)) : Optional.empty();
         } catch (SQLException e) {
-            throw new IllegalStateException("Last import lookup failed: " + e.getMessage(), e);
+            throw new IllegalStateException("getLastImportName failed: " + e.getMessage(), e);
         }
     }
 
-    // ---- SQL helpers ----
+    // ---- helpers ----
 
-    private List<WordPair> suggestNext(Connection conn, String leadingWord, int limit)
-            throws SQLException {
-        String sql = """
-                SELECT w1.word_text AS leading_text, w2.word_text AS following_text, p.follow_count
-                FROM word_pairs p
-                JOIN words w1 ON w1.word_id = p.leading_word_id
-                JOIN words w2 ON w2.word_id = p.following_word_id
-                WHERE w1.word_text = ?
-                ORDER BY p.follow_count DESC
-                LIMIT ?
-                """;
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, leadingWord);
-            ps.setInt(2, Math.max(1, limit));
-            try (ResultSet rs = ps.executeQuery()) {
-                List<WordPair> list = new ArrayList<>();
-                while (rs.next()) {
-                    list.add(new WordPair(
-                            rs.getString("leading_text"),
-                            rs.getString("following_text"),
-                            rs.getInt("follow_count")));
-                }
-                return list;
-            }
-        }
+    private void feedSentenceIntoCorpus(Connection conn, String sentence) throws SQLException {
+        BookCorpusImporter importer = new BookCorpusImporter(cancelRequested);
+        String[] sentences = {sentence};
+        importer.calculateStatistics(sentences);
+        importer.insertWords(conn,
+                importer.getWordFrequency(),
+                importer.getStartCount(),
+                importer.getEndCount());
+        importer.insertWordTransitions(conn, importer.getWordTransitions());
     }
 
-    private long upsertWord(Connection conn, String wordText, boolean start, boolean end)
+    private long ensureWord(Connection conn, String text, int addTotal, int addStart, int addEnd)
             throws SQLException {
-        Optional<Long> existing = findWordId(conn, wordText);
+        Optional<Long> existing = findWordId(conn, text);
         if (existing.isPresent()) {
-            String sql = """
-                    UPDATE words
-                    SET frequency = frequency + 1,
-                        is_sentence_start = is_sentence_start OR ?,
-                        is_sentence_end = is_sentence_end OR ?
-                    WHERE word_id = ?
-                    """;
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setBoolean(1, start);
-                ps.setBoolean(2, end);
-                ps.setLong(3, existing.get());
-                ps.executeUpdate();
+            if (addTotal > 0 || addStart > 0 || addEnd > 0) {
+                String sql = """
+                        UPDATE word SET
+                          total_count = total_count + ?,
+                          start_count = start_count + ?,
+                          end_count = end_count + ?
+                        WHERE word_id = ?
+                        """;
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setInt(1, addTotal);
+                    ps.setInt(2, addStart);
+                    ps.setInt(3, addEnd);
+                    ps.setLong(4, existing.get());
+                    ps.executeUpdate();
+                }
             }
             return existing.get();
         }
         String sql = """
-                INSERT INTO words (word_text, frequency, is_sentence_start, is_sentence_end)
-                VALUES (?, 1, ?, ?)
+                INSERT INTO word (word_text, total_count, start_count, end_count)
+                VALUES (?, ?, ?, ?)
                 """;
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setString(1, wordText);
-            ps.setBoolean(2, start);
-            ps.setBoolean(3, end);
+            ps.setString(1, text);
+            ps.setInt(2, Math.max(addTotal, 1));
+            ps.setInt(3, addStart);
+            ps.setInt(4, addEnd);
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 keys.next();
@@ -442,86 +457,29 @@ public class JdbcDataService implements DataService {
         }
     }
 
-    private void ensureWordExists(Connection conn, String wordText, boolean start, boolean end)
-            throws SQLException {
-        if (findWordId(conn, wordText).isEmpty()) {
-            upsertWord(conn, wordText, start, end);
-        } else if (start || end) {
-            String sql = """
-                    UPDATE words
-                    SET is_sentence_start = is_sentence_start OR ?,
-                        is_sentence_end = is_sentence_end OR ?
-                    WHERE word_text = ?
-                    """;
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setBoolean(1, start);
-                ps.setBoolean(2, end);
-                ps.setString(3, wordText);
-                ps.executeUpdate();
-            }
-        }
-    }
-
-    private void upsertPair(Connection conn, long leadingId, long followingId) throws SQLException {
-        String sql = """
-                INSERT INTO word_pairs (leading_word_id, following_word_id, follow_count)
-                VALUES (?, ?, 1)
-                ON DUPLICATE KEY UPDATE follow_count = follow_count + 1
-                """;
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setLong(1, leadingId);
-            ps.setLong(2, followingId);
-            ps.executeUpdate();
-        }
-    }
-
-    private ImportedFile insertImportedFile(Connection conn, String name, String path,
-                                            int wordCount, int uniqueCount) throws SQLException {
-        String sql = """
-                INSERT INTO imported_files (file_name, file_path, word_count, unique_word_count)
-                VALUES (?, ?, ?, ?)
-                """;
-        try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setString(1, name);
-            ps.setString(2, path);
-            ps.setInt(3, wordCount);
-            ps.setInt(4, uniqueCount);
-            ps.executeUpdate();
-            long id;
-            try (ResultSet keys = ps.getGeneratedKeys()) {
-                keys.next();
-                id = keys.getLong(1);
-            }
-            return new ImportedFile(id, name, path, wordCount, uniqueCount, LocalDateTime.now());
-        }
-    }
-
-    private GeneratedSentence insertSentence(Connection conn, String text, String algorithm,
-                                             String startWord, boolean duplicate)
-            throws SQLException {
-        String sql = """
-                INSERT INTO generated_sentences
-                    (sentence_text, algorithm, start_word, is_duplicate)
-                VALUES (?, ?, ?, ?)
-                """;
-        try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+    private Optional<Long> findWordId(Connection conn, String text) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT word_id FROM word WHERE word_text = ?")) {
             ps.setString(1, text);
-            ps.setString(2, algorithm);
-            ps.setString(3, startWord);
-            ps.setBoolean(4, duplicate);
-            ps.executeUpdate();
-            long id;
-            try (ResultSet keys = ps.getGeneratedKeys()) {
-                keys.next();
-                id = keys.getLong(1);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? Optional.of(rs.getLong(1)) : Optional.empty();
             }
-            return new GeneratedSentence(id, text, algorithm, startWord, LocalDateTime.now(), duplicate);
         }
     }
 
-    private boolean sentenceExists(Connection conn, String text) throws SQLException {
-        String sql = "SELECT 1 FROM generated_sentences WHERE LOWER(sentence_text) = LOWER(?) LIMIT 1";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+    private Optional<Word> findWord(Connection conn, String text) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT word_id, word_text, total_count, start_count, end_count FROM word WHERE word_text = ?")) {
+            ps.setString(1, text);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? Optional.of(mapWord(rs)) : Optional.empty();
+            }
+        }
+    }
+
+    private boolean sentenceTextExists(Connection conn, String text) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT 1 FROM sentence WHERE LOWER(sentence_text) = LOWER(?) LIMIT 1")) {
             ps.setString(1, text);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
@@ -529,116 +487,75 @@ public class JdbcDataService implements DataService {
         }
     }
 
-    private void feedSentenceIntoCorpus(Connection conn, String sentence) throws SQLException {
-        List<String> tokens = TextTokenizer.tokenize(sentence);
-        boolean atStart = true;
-        String previous = null;
-        for (String token : tokens) {
-            String word = TextTokenizer.bareWord(token);
-            boolean end = TextTokenizer.isSentenceEnd(token);
-            long wordId = upsertWord(conn, word, atStart, end);
-            if (previous != null) {
-                long prevId = findWordId(conn, previous).orElseThrow();
-                upsertPair(conn, prevId, wordId);
+    private long insertSentence(Connection conn, String text, Integer startWordId, String type)
+            throws SQLException {
+        String sql = "INSERT INTO sentence (sentence_text, start_word_id, sentence_type) VALUES (?, ?, ?)";
+        try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, text);
+            if (startWordId == null) {
+                ps.setNull(2, java.sql.Types.INTEGER);
+            } else {
+                ps.setInt(2, startWordId);
             }
-            previous = word;
-            atStart = end;
+            ps.setString(3, type);
+            ps.executeUpdate();
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                keys.next();
+                return keys.getLong(1);
+            }
         }
     }
 
-    private void recordAutocompleteEvent(Connection conn, long leadId, long followId,
-                                         String lead, String follow, boolean unknown)
-            throws SQLException {
+    private void insertGeneratedDetail(Connection conn, long sentenceId, String algorithm,
+                                       boolean duplicate, boolean added) throws SQLException {
         String sql = """
-                INSERT INTO autocomplete_events
-                    (leading_word_id, selected_word_id, leading_text, selected_text, was_unknown)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO generated_sentence (sentence_id, algorithm, is_duplicate, added_to_corpus)
+                VALUES (?, ?, ?, ?)
                 """;
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setLong(1, leadId);
-            ps.setLong(2, followId);
-            ps.setString(3, lead);
-            ps.setString(4, follow);
-            ps.setBoolean(5, unknown);
+            ps.setLong(1, sentenceId);
+            ps.setString(2, algorithm);
+            ps.setBoolean(3, duplicate);
+            ps.setBoolean(4, added);
             ps.executeUpdate();
         }
     }
 
-    private Optional<Long> findWordId(Connection conn, String text) throws SQLException {
-        String sql = "SELECT word_id FROM words WHERE word_text = ?";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, text);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(rs.getLong(1));
-                }
-                return Optional.empty();
-            }
+    private void updateGeneratedAddedFlag(Connection conn, long sentenceId, boolean added)
+            throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "UPDATE generated_sentence SET added_to_corpus = ? WHERE sentence_id = ?")) {
+            ps.setBoolean(1, added);
+            ps.setLong(2, sentenceId);
+            ps.executeUpdate();
         }
     }
 
-    private Optional<Word> findWord(Connection conn, String text) throws SQLException {
-        String sql = """
-                SELECT word_id, word_text, frequency, is_sentence_start, is_sentence_end
-                FROM words WHERE word_text = ?
-                """;
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, text);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(mapWord(rs));
-                }
-                return Optional.empty();
-            }
-        }
-    }
-
-    private List<String> listWordTexts(Connection conn, int limit) throws SQLException {
-        String sql = "SELECT word_text FROM words ORDER BY frequency DESC LIMIT ?";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, limit);
-            try (ResultSet rs = ps.executeQuery()) {
-                List<String> list = new ArrayList<>();
-                while (rs.next()) {
-                    list.add(rs.getString(1));
-                }
-                return list;
-            }
-        }
-    }
-
-    private List<String> listSentenceStartWords(Connection conn) throws SQLException {
-        String sql = "SELECT word_text FROM words WHERE is_sentence_start = 1";
-        try (PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            List<String> list = new ArrayList<>();
-            while (rs.next()) {
-                list.add(rs.getString(1));
-            }
-            return list;
-        }
-    }
-
-    private static Word mapWord(ResultSet rs) throws SQLException {
-        return new Word(
+    private Word mapWord(ResultSet rs) throws SQLException {
+        int start = rs.getInt("start_count");
+        int end = rs.getInt("end_count");
+        Word w = new Word(
                 rs.getLong("word_id"),
                 rs.getString("word_text"),
-                rs.getInt("frequency"),
-                rs.getBoolean("is_sentence_start"),
-                rs.getBoolean("is_sentence_end"));
+                rs.getInt("total_count"),
+                start > 0,
+                end > 0);
+        w.setStartCount(start);
+        w.setEndCount(end);
+        return w;
     }
 
-    private static String normalize(String text) {
-        if (text == null) {
-            return "";
+    private int scalarInt(String sql, String param) {
+        try (Connection conn = database.open();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            if (param != null) {
+                ps.setString(1, param);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException(e.getMessage(), e);
         }
-        return text.trim().toLowerCase(Locale.ROOT);
-    }
-
-    private static String capitalize(String text) {
-        if (text == null || text.isEmpty()) {
-            return text;
-        }
-        return Character.toUpperCase(text.charAt(0)) + text.substring(1);
     }
 }

@@ -1,11 +1,16 @@
--- =============================================================================
--- Sentence Builder – Team 22
--- MySQL 8 DDL (single source of truth for the schema)
--- Author: Nirav Rohra
--- Date: 2026-10-16
---
--- Tables: words, word_pairs, imported_files, generated_sentences, autocomplete_events
--- =============================================================================
+/******************************************************************************
+ * schema.sql – Team 22 Sentence Builder (canonical MySQL schema)
+ *
+ * Based on Umair Malik's WP3 design, with Ahmed Sherwani import fields
+ * (book_title) retained for Gutenberg book imports.
+ *
+ * Tables:
+ *   word, follows, imported_file, file_word,
+ *   sentence, generated_sentence, typed_sentence, sentence_word
+ *
+ * Authors: Umair Malik, Nirav Rohra, Ahmed Sherwani
+ * Date: 2026-11-13
+ ******************************************************************************/
 
 CREATE DATABASE IF NOT EXISTS sentence_builder
     CHARACTER SET utf8mb4
@@ -13,90 +18,91 @@ CREATE DATABASE IF NOT EXISTS sentence_builder
 
 USE sentence_builder;
 
--- ---------------------------------------------------------------------------
--- words: each distinct token observed in the corpus
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS words (
-    word_id           BIGINT       NOT NULL AUTO_INCREMENT,
-    word_text         VARCHAR(128) NOT NULL,
-    frequency         INT          NOT NULL DEFAULT 1,
-    is_sentence_start TINYINT(1)   NOT NULL DEFAULT 0,
-    is_sentence_end   TINYINT(1)   NOT NULL DEFAULT 0,
-    created_at        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+CREATE TABLE IF NOT EXISTS word (
+    word_id      INT          NOT NULL AUTO_INCREMENT,
+    word_text    VARCHAR(100) NOT NULL,
+    total_count  INT          NOT NULL DEFAULT 0,
+    start_count  INT          NOT NULL DEFAULT 0,
+    end_count    INT          NOT NULL DEFAULT 0,
     PRIMARY KEY (word_id),
-    UNIQUE KEY uq_words_text (word_text),
-    KEY idx_words_frequency (frequency)
+    UNIQUE KEY uk_word_text (word_text)
 ) ENGINE=InnoDB;
 
--- ---------------------------------------------------------------------------
--- word_pairs: word-follows-word relationships with observed counts
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS word_pairs (
-    pair_id         BIGINT       NOT NULL AUTO_INCREMENT,
-    leading_word_id BIGINT       NOT NULL,
-    following_word_id BIGINT     NOT NULL,
-    follow_count    INT          NOT NULL DEFAULT 1,
-    created_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (pair_id),
-    UNIQUE KEY uq_word_pairs (leading_word_id, following_word_id),
-    KEY idx_pairs_leading (leading_word_id),
-    KEY idx_pairs_following (following_word_id),
-    CONSTRAINT fk_pairs_leading
-        FOREIGN KEY (leading_word_id) REFERENCES words (word_id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_pairs_following
-        FOREIGN KEY (following_word_id) REFERENCES words (word_id)
-        ON DELETE CASCADE ON UPDATE CASCADE
+CREATE TABLE IF NOT EXISTS follows (
+    follow_id     INT NOT NULL AUTO_INCREMENT,
+    first_word_id INT NOT NULL,
+    next_word_id  INT NOT NULL,
+    follow_count  INT NOT NULL DEFAULT 1,
+    PRIMARY KEY (follow_id),
+    UNIQUE KEY uk_follows_pair (first_word_id, next_word_id),
+    CONSTRAINT fk_follows_first_word FOREIGN KEY (first_word_id)
+        REFERENCES word (word_id),
+    CONSTRAINT fk_follows_next_word FOREIGN KEY (next_word_id)
+        REFERENCES word (word_id)
 ) ENGINE=InnoDB;
 
--- ---------------------------------------------------------------------------
--- imported_files: history of text files loaded into the corpus
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS imported_files (
-    file_id           BIGINT       NOT NULL AUTO_INCREMENT,
-    file_name         VARCHAR(255) NOT NULL,
-    file_path         VARCHAR(1024) NOT NULL,
-    word_count        INT          NOT NULL DEFAULT 0,
-    unique_word_count INT          NOT NULL DEFAULT 0,
-    imported_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (file_id),
-    KEY idx_imported_at (imported_at)
+CREATE TABLE IF NOT EXISTS imported_file (
+    file_id     INT           NOT NULL AUTO_INCREMENT,
+    file_name   VARCHAR(255)  NOT NULL,
+    file_path   VARCHAR(1024) NULL,
+    book_title  VARCHAR(255)  NULL,
+    word_count  INT           NOT NULL DEFAULT 0,
+    unique_word_count INT     NOT NULL DEFAULT 0,
+    import_time DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (file_id)
 ) ENGINE=InnoDB;
 
--- ---------------------------------------------------------------------------
--- generated_sentences: sentences produced by generation algorithms
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS generated_sentences (
-    sentence_id   BIGINT       NOT NULL AUTO_INCREMENT,
-    sentence_text VARCHAR(2000) NOT NULL,
-    algorithm     VARCHAR(64)  NOT NULL,
-    start_word    VARCHAR(128) NOT NULL,
-    is_duplicate  TINYINT(1)   NOT NULL DEFAULT 0,
-    created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+CREATE TABLE IF NOT EXISTS file_word (
+    file_word_id  INT NOT NULL AUTO_INCREMENT,
+    file_id       INT NOT NULL,
+    word_id       INT NOT NULL,
+    count_in_file INT NOT NULL DEFAULT 1,
+    PRIMARY KEY (file_word_id),
+    UNIQUE KEY uk_file_word (file_id, word_id),
+    CONSTRAINT fk_file_word_file FOREIGN KEY (file_id)
+        REFERENCES imported_file (file_id),
+    CONSTRAINT fk_file_word_word FOREIGN KEY (word_id)
+        REFERENCES word (word_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS sentence (
+    sentence_id   INT                         NOT NULL AUTO_INCREMENT,
+    sentence_text TEXT                        NOT NULL,
+    start_word_id INT                         NULL,
+    sentence_type ENUM('GENERATED', 'TYPED', 'BOOK')  NOT NULL,
+    created_at    DATETIME                    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (sentence_id),
-    KEY idx_sentences_created (created_at),
-    KEY idx_sentences_text (sentence_text(191))
+    CONSTRAINT fk_sentence_start_word FOREIGN KEY (start_word_id)
+        REFERENCES word (word_id)
 ) ENGINE=InnoDB;
 
--- ---------------------------------------------------------------------------
--- autocomplete_events: metadata for next-word suggestion usage (WP8)
--- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS autocomplete_events (
-    event_id          BIGINT       NOT NULL AUTO_INCREMENT,
-    leading_word_id   BIGINT       NULL,
-    selected_word_id  BIGINT       NULL,
-    leading_text      VARCHAR(128) NOT NULL,
-    selected_text     VARCHAR(128) NOT NULL,
-    was_unknown       TINYINT(1)   NOT NULL DEFAULT 0,
-    created_at        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (event_id),
-    KEY idx_ac_created (created_at),
-    CONSTRAINT fk_ac_leading
-        FOREIGN KEY (leading_word_id) REFERENCES words (word_id)
-        ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT fk_ac_selected
-        FOREIGN KEY (selected_word_id) REFERENCES words (word_id)
-        ON DELETE SET NULL ON UPDATE CASCADE
+CREATE TABLE IF NOT EXISTS generated_sentence (
+    sentence_id     INT         NOT NULL,
+    algorithm       VARCHAR(50) NOT NULL,
+    is_duplicate    BOOLEAN     NOT NULL DEFAULT FALSE,
+    added_to_corpus BOOLEAN     NOT NULL DEFAULT FALSE,
+    PRIMARY KEY (sentence_id),
+    CONSTRAINT fk_generated_sentence FOREIGN KEY (sentence_id)
+        REFERENCES sentence (sentence_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS typed_sentence (
+    sentence_id          INT NOT NULL,
+    accepted_suggestions INT NOT NULL DEFAULT 0,
+    PRIMARY KEY (sentence_id),
+    CONSTRAINT fk_typed_sentence FOREIGN KEY (sentence_id)
+        REFERENCES sentence (sentence_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS sentence_word (
+    sentence_word_id INT NOT NULL AUTO_INCREMENT,
+    sentence_id      INT NOT NULL,
+    word_id          INT NOT NULL,
+    occurrences      INT NOT NULL DEFAULT 1,
+    PRIMARY KEY (sentence_word_id),
+    UNIQUE KEY uk_sentence_word (sentence_id, word_id),
+    CONSTRAINT fk_sentence_word_sentence FOREIGN KEY (sentence_id)
+        REFERENCES sentence (sentence_id),
+    CONSTRAINT fk_sentence_word_word FOREIGN KEY (word_id)
+        REFERENCES word (word_id)
 ) ENGINE=InnoDB;

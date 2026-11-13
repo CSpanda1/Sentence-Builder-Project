@@ -1,90 +1,63 @@
 # Sentence Builder – Team 22
 
-CS4485 Senior Design: a JavaFX application that imports public-domain text into **MySQL**, stores word / follower statistics, generates sentences with multiple algorithms, and offers next-word autocomplete.
+CS4485 Senior Design: JavaFX + MySQL sentence builder with Gutenberg import, multi-algorithm generation, and autocomplete.
 
-## Team
+## Team contributions integrated
 
-| Member | Role |
-|--------|------|
-| Ved Mahant | Project Manager / User Interface Lead |
-| Nirav Rohra | Technical Lead / Database / Integration |
-| Umair Malik | Generation Algorithms / Configuration Manager |
-| Ahmed Sherwani | QA / Text Import / Reporting |
+| Member | What landed in this tree |
+|--------|---------------------------|
+| **Ahmed Sherwani** (`origin/Ahmed`) | Book import pipeline (tokenize, sentence extract, frequency / transitions, batch JDBC inserts), AWS `DATABASE_*` env support, `data/pg11.txt` |
+| **Umair Malik** (`origin/Umair`) | Canonical schema (`word` / `follows` / `sentence`…), `SentenceGenerator` hierarchy, autocomplete suggester / recorder |
+| **Ved Mahant / Nirav Rohra** | JavaFX screens, wiring, JDBC `DataService`, stub fallback |
 
-## Features (work packages)
+## Features
 
-- **WP3** – MySQL schema + ER notes (`db/schema.sql`, `db/ER.md`)
-- **WP4** – JDBC data access (`JdbcDataService`, `DatabaseConnection`)
-- **WP5** – Text import with progress + tokenizer
-- **WP6** – Probability-weighted, most-frequent, and random-walk generation (+ batch feedback into corpus)
-- **WP7** – JavaFX screens (Import, Generate, Autocomplete, Word Editor, Reports)
-- **WP8–WP9** – Autocomplete follow recording; word editor; reports with duplicate flags
+- Import text / Gutenberg books with progress (Ahmed logic → Umair tables)
+- Generate with probability-weighted, most-frequent, and random-walk algorithms
+- Autocomplete after space / `.` / `,`
+- Word editor + reports (imports, generated history, duplicates, stats)
+- Runs on **stub** without MySQL; uses **JDBC** when DB is reachable
 
-If MySQL is down, the app **falls back** to an in-memory stub so demos still work.
-
-## Requirements
-
-- JDK 21
-- Apache Maven 3.9+
-- Optional later: local MySQL 8 / MariaDB (schema in `db/schema.sql`)
-
-## Run the application
-
-Without MySQL the app uses the in-memory stub automatically. With MySQL running and credentials matching `application.properties`, it uses JDBC.
+## Run
 
 ```bash
-export JAVA_HOME="/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home"   # macOS Homebrew example
+export JAVA_HOME="/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home"
 cd sentence-builder
 mvn clean javafx:run
 ```
 
-### Apply schema when you have MySQL
+Window title shows `(Stub)` or `(MySQL)`.
+
+### Database (when ready)
 
 ```bash
 mysql -u root -p < db/schema.sql
-# then set user/password in application.properties or .env (see .env.example)
 ```
 
-Default JDBC settings in `application.properties`: host `localhost`, port `3306`, database `sentence_builder`, user `sentence`, password `sentence`.
+Config: `src/main/resources/application.properties` or `.env` (see `.env.example`).
 
-### Keyboard shortcuts
+Ahmed’s AWS RDS style:
 
-| Shortcut | Screen |
-|----------|--------|
-| Ctrl/Cmd+1 | Import |
-| Ctrl/Cmd+2 | Generate |
-| Ctrl/Cmd+3 | Autocomplete |
-| Ctrl/Cmd+4 | Word Editor |
-| Ctrl/Cmd+5 | Reports |
-
-### Try import
-
-Use `data/sample-corpus.txt` on the Import screen (Browse → Start Import).
-
-## Project layout
-
-```
-sentence-builder/
-  db/schema.sql          MySQL DDL
-  db/ER.md               Entity-relationship overview
-  docker-compose.yml     Local MySQL 8
-  data/sample-corpus.txt Test text
-  src/main/java/.../
-    SentenceBuilderApp.java
-    db/                  DatabaseConfig, DatabaseConnection
-    importing/           TextTokenizer
-    generation/          FollowerPicker
-    model/               Domain objects
-    service/             DataService, JdbcDataService, StubDataService
-    ui/                  FXML controllers
-  src/main/resources/
-    application.properties
-    fxml/  css/
+```bash
+export DATABASE_URL='jdbc:mysql://host:3306/sentence_builder?...'
+export DATABASE_USERNAME='...'
+export DATABASE_PASSWORD='...'
 ```
 
-## Configuration
+### Sample import files
 
-Override via environment variables or a local `.env` (see `.env.example`):
+- `data/sample-corpus.txt` – tiny demo
+- `data/pg11.txt` – Alice in Wonderland (from Ahmed’s branch)
 
-- `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS`
-- `DB_PREFER_JDBC=false` forces the in-memory stub
+## Layout
+
+```
+db/schema.sql, db/ER.md
+data/
+src/main/java/.../sentencebuilder/
+  importing/BookCorpusImporter.java   # Ahmed
+  generation/*                        # Umair
+  autocomplete/*                      # Umair
+  db/*, service/JdbcDataService.java  # Nirav integration
+  ui/*                                # JavaFX WP7
+```

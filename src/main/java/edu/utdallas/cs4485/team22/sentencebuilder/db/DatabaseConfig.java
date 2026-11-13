@@ -7,14 +7,20 @@ import java.nio.file.Path;
 import java.util.Properties;
 
 /**
- * Loads database connection settings from {@code application.properties}
- * and optional environment variables / {@code .env} file.
+ * Loads database connection settings from {@code application.properties},
+ * {@code .env}, and environment variables.
+ *
+ * <p>Supports Team 22 local settings ({@code DB_*}) and Ahmed's AWS RDS
+ * variables ({@code DATABASE_URL}, {@code DATABASE_USERNAME},
+ * {@code DATABASE_PASSWORD}).</p>
  *
  * @author Nirav Rohra
+ * @author Ahmed Sherwani
  * @date 2026-10-16
  */
 public final class DatabaseConfig {
 
+    private final String jdbcUrl;
     private final String host;
     private final int port;
     private final String database;
@@ -22,8 +28,9 @@ public final class DatabaseConfig {
     private final String password;
     private final boolean preferJdbc;
 
-    private DatabaseConfig(String host, int port, String database,
+    private DatabaseConfig(String jdbcUrl, String host, int port, String database,
                            String user, String password, boolean preferJdbc) {
+        this.jdbcUrl = jdbcUrl;
         this.host = host;
         this.port = port;
         this.database = database;
@@ -33,8 +40,7 @@ public final class DatabaseConfig {
     }
 
     /**
-     * Loads configuration from the classpath properties file, then applies
-     * overrides from a project-root {@code .env} file and environment variables.
+     * Loads configuration with env overrides.
      *
      * @return resolved configuration
      * @author Nirav Rohra
@@ -52,6 +58,28 @@ public final class DatabaseConfig {
 
         loadDotEnv(props);
 
+        String awsUrl = firstNonBlank(System.getenv("DATABASE_URL"), props.getProperty("database.url"));
+        String user = firstNonBlank(
+                System.getenv("DATABASE_USERNAME"),
+                System.getenv("DB_USER"),
+                props.getProperty("db.user"),
+                "sentence");
+        String password = firstNonBlank(
+                System.getenv("DATABASE_PASSWORD"),
+                System.getenv("DB_PASS"),
+                System.getenv("DB_PASSWORD"),
+                props.getProperty("db.password"),
+                "sentence");
+        boolean preferJdbc = Boolean.parseBoolean(firstNonBlank(
+                System.getenv("DB_PREFER_JDBC"),
+                props.getProperty("db.preferJdbc"),
+                "true"));
+
+        if (!awsUrl.isBlank()) {
+            return new DatabaseConfig(awsUrl, "(remote)", 3306, "(from DATABASE_URL)",
+                    user, password, preferJdbc);
+        }
+
         String host = firstNonBlank(
                 System.getenv("DB_HOST"),
                 props.getProperty("db.host"),
@@ -64,32 +92,19 @@ public final class DatabaseConfig {
                 System.getenv("DB_NAME"),
                 props.getProperty("db.name"),
                 "sentence_builder");
-        String user = firstNonBlank(
-                System.getenv("DB_USER"),
-                props.getProperty("db.user"),
-                "sentence");
-        String password = firstNonBlank(
-                System.getenv("DB_PASS"),
-                System.getenv("DB_PASSWORD"),
-                props.getProperty("db.password"),
-                "sentence");
-        boolean preferJdbc = Boolean.parseBoolean(firstNonBlank(
-                System.getenv("DB_PREFER_JDBC"),
-                props.getProperty("db.preferJdbc"),
-                "true"));
-
-        return new DatabaseConfig(host, port, database, user, password, preferJdbc);
+        String url = String.format(
+                "jdbc:mysql://%s:%d/%s?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
+                host, port, database);
+        return new DatabaseConfig(url, host, port, database, user, password, preferJdbc);
     }
 
     /**
-     * @return JDBC URL for MySQL Connector/J
-     * @author Nirav Rohra
-     * @date 2026-10-16
+     * @return JDBC URL (local or AWS RDS)
+     * @author Ahmed Sherwani
+     * @date 2026-10-17
      */
     public String jdbcUrl() {
-        return String.format(
-                "jdbc:mysql://%s:%d/%s?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
-                host, port, database);
+        return jdbcUrl;
     }
 
     public String getHost() {
@@ -137,8 +152,9 @@ public final class DatabaseConfig {
                     case "DB_HOST" -> props.setProperty("db.host", value);
                     case "DB_PORT" -> props.setProperty("db.port", value);
                     case "DB_NAME" -> props.setProperty("db.name", value);
-                    case "DB_USER" -> props.setProperty("db.user", value);
-                    case "DB_PASS", "DB_PASSWORD" -> props.setProperty("db.password", value);
+                    case "DB_USER", "DATABASE_USERNAME" -> props.setProperty("db.user", value);
+                    case "DB_PASS", "DB_PASSWORD", "DATABASE_PASSWORD" -> props.setProperty("db.password", value);
+                    case "DATABASE_URL" -> props.setProperty("database.url", value);
                     case "DB_PREFER_JDBC" -> props.setProperty("db.preferJdbc", value);
                     default -> {
                     }

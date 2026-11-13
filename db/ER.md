@@ -1,75 +1,50 @@
 # Sentence Builder – Entity Relationship Overview
 
-**Author:** Nirav Rohra  
-**Date:** 2026-10-16  
+**Authors:** Umair Malik (schema), Ahmed Sherwani (import), Nirav Rohra (integration)  
 **Database:** `sentence_builder` (MySQL 8)
 
 ```mermaid
 erDiagram
-    WORDS ||--o{ WORD_PAIRS : "leads"
-    WORDS ||--o{ WORD_PAIRS : "follows"
-    WORDS ||--o{ AUTOCOMPLETE_EVENTS : "leading"
-    WORDS ||--o{ AUTOCOMPLETE_EVENTS : "selected"
-    IMPORTED_FILES ||--o{ WORDS : "populates"
-    GENERATED_SENTENCES }o--|| WORDS : "starts_with"
+    WORD ||--o{ FOLLOWS : "first"
+    WORD ||--o{ FOLLOWS : "next"
+    WORD ||--o{ FILE_WORD : "appears_in"
+    IMPORTED_FILE ||--o{ FILE_WORD : "contains"
+    WORD ||--o{ SENTENCE : "may_start"
+    SENTENCE ||--o| GENERATED_SENTENCE : "detail"
+    SENTENCE ||--o| TYPED_SENTENCE : "detail"
+    SENTENCE ||--o{ SENTENCE_WORD : "uses"
+    WORD ||--o{ SENTENCE_WORD : "in"
 
-    WORDS {
-        BIGINT word_id PK
+    WORD {
+        INT word_id PK
         VARCHAR word_text UK
-        INT frequency
-        BOOL is_sentence_start
-        BOOL is_sentence_end
+        INT total_count
+        INT start_count
+        INT end_count
     }
-
-    WORD_PAIRS {
-        BIGINT pair_id PK
-        BIGINT leading_word_id FK
-        BIGINT following_word_id FK
+    FOLLOWS {
+        INT follow_id PK
+        INT first_word_id FK
+        INT next_word_id FK
         INT follow_count
     }
-
-    IMPORTED_FILES {
-        BIGINT file_id PK
+    IMPORTED_FILE {
+        INT file_id PK
         VARCHAR file_name
-        VARCHAR file_path
+        VARCHAR book_title
         INT word_count
-        INT unique_word_count
-        TIMESTAMP imported_at
     }
-
-    GENERATED_SENTENCES {
-        BIGINT sentence_id PK
-        VARCHAR sentence_text
-        VARCHAR algorithm
-        VARCHAR start_word
-        BOOL is_duplicate
-        TIMESTAMP created_at
-    }
-
-    AUTOCOMPLETE_EVENTS {
-        BIGINT event_id PK
-        BIGINT leading_word_id FK
-        BIGINT selected_word_id FK
-        VARCHAR leading_text
-        VARCHAR selected_text
-        BOOL was_unknown
+    SENTENCE {
+        INT sentence_id PK
+        TEXT sentence_text
+        ENUM sentence_type
     }
 ```
 
-## Relationships
-
-| From | To | Cardinality | Meaning |
-|------|-----|-------------|---------|
-| `words` | `word_pairs` | 1:N (as leading) | A word may lead many follower pairs |
-| `words` | `word_pairs` | 1:N (as following) | A word may follow many leaders |
-| `words` | `autocomplete_events` | 1:N | Suggestion acceptances / unknown-word adds |
-| `imported_files` | corpus | logical | Import history; tokens land in `words` / `word_pairs` |
-| `generated_sentences` | corpus | logical | Generated text can be fed back into the corpus |
-
-Apply the schema with:
+Apply with:
 
 ```bash
 mysql -u root -p < db/schema.sql
 ```
 
-Or start the Docker MySQL service (see README) which runs this script on first boot.
+Or point `DATABASE_URL` / `DATABASE_USERNAME` / `DATABASE_PASSWORD` at AWS RDS (Ahmed).

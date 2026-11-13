@@ -13,13 +13,15 @@ public class Word {
     private int frequency;
     private boolean sentenceStart;
     private boolean sentenceEnd;
+    private int startCount;
+    private int endCount;
 
     /**
      * Creates a word with the given attributes.
      *
      * @param id             surrogate key
      * @param text           word text (normalized)
-     * @param frequency      observed count in the corpus
+     * @param frequency      observed count in the corpus ({@code total_count})
      * @param sentenceStart  true if this word begins at least one sentence
      * @param sentenceEnd    true if this word ends at least one sentence
      * @author Nirav Rohra
@@ -32,6 +34,26 @@ public class Word {
         this.frequency = frequency;
         this.sentenceStart = sentenceStart;
         this.sentenceEnd = sentenceEnd;
+        this.startCount = sentenceStart ? 1 : 0;
+        this.endCount = sentenceEnd ? 1 : 0;
+    }
+
+    public int getStartCount() {
+        return startCount;
+    }
+
+    public void setStartCount(int startCount) {
+        this.startCount = startCount;
+        this.sentenceStart = startCount > 0;
+    }
+
+    public int getEndCount() {
+        return endCount;
+    }
+
+    public void setEndCount(int endCount) {
+        this.endCount = endCount;
+        this.sentenceEnd = endCount > 0;
     }
 
     public long getId() {

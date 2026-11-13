@@ -1,5 +1,8 @@
 package edu.utdallas.cs4485.team22.sentencebuilder.ui;
 
+import edu.utdallas.cs4485.team22.sentencebuilder.autocomplete.AutoCompleteRecorder;
+import edu.utdallas.cs4485.team22.sentencebuilder.autocomplete.AutoCompleteSuggester;
+import edu.utdallas.cs4485.team22.sentencebuilder.generation.FollowerProvider;
 import edu.utdallas.cs4485.team22.sentencebuilder.model.Word;
 import edu.utdallas.cs4485.team22.sentencebuilder.model.WordPair;
 import edu.utdallas.cs4485.team22.sentencebuilder.service.DataService;
@@ -17,9 +20,10 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 /**
- * Controller for next-word autocomplete (suggestions after space / . / ,).
+ * Controller for next-word autocomplete (Umair suggester + DataService fallback).
  *
  * @author Ved Mahant
+ * @author Umair Malik
  * @date 2026-10-16
  */
 public class AutocompleteController
@@ -31,15 +35,10 @@ public class AutocompleteController
     @FXML private Label messageLabel;
 
     private DataService dataService;
+    private AutoCompleteSuggester suggester;
     private Runnable statusRefresher;
     private String lastLeadingWord = "";
 
-    /**
-     * Wires text listeners and keyboard accept for suggestions.
-     *
-     * @author Ved Mahant
-     * @date 2026-10-16
-     */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         composeArea.textProperty().addListener((obs, oldVal, newVal) -> onTextChanged(newVal));
@@ -62,6 +61,12 @@ public class AutocompleteController
     @Override
     public void setDataService(DataService dataService) {
         this.dataService = dataService;
+        if (dataService instanceof FollowerProvider provider
+                && dataService instanceof AutoCompleteRecorder recorder) {
+            this.suggester = new AutoCompleteSuggester(provider, recorder);
+        } else {
+            this.suggester = null;
+        }
     }
 
     @Override
@@ -79,18 +84,24 @@ public class AutocompleteController
         onTextChanged(composeArea.getText());
     }
 
-    /**
-     * When the last character is a trigger, load follower suggestions.
-     *
-     * @param text current compose text
-     * @author Ved Mahant
-     * @date 2026-10-16
-     */
     private void onTextChanged(String text) {
         if (text == null || text.isEmpty()) {
             suggestionList.getItems().clear();
             return;
         }
+        if (suggester != null) {
+            List<String> suggestions = suggester.suggest(text);
+            suggestionList.getItems().setAll(suggestions);
+            lastLeadingWord = suggester.lastCompleteWord(text);
+            if (!suggestions.isEmpty()) {
+                suggestionList.getSelectionModel().selectFirst();
+                messageLabel.setText("Suggestions for \"" + lastLeadingWord + "\"");
+            } else if (endsWithTrigger(text)) {
+                messageLabel.setText("No followers known for \"" + lastLeadingWord + "\".");
+            }
+            return;
+        }
+
         char last = text.charAt(text.length() - 1);
         if (last != ' ' && last != '.' && last != ',') {
             return;
@@ -110,16 +121,10 @@ public class AutocompleteController
             suggestionList.getSelectionModel().selectFirst();
             messageLabel.setText("Suggestions for \"" + leading + "\"");
         } else {
-            messageLabel.setText("No followers known for \"" + leading + "\". Add a word below.");
+            messageLabel.setText("No followers known for \"" + leading + "\".");
         }
     }
 
-    /**
-     * Appends the selected suggestion and records the follow count.
-     *
-     * @author Ved Mahant
-     * @date 2026-10-16
-     */
     @FXML
     public void onAcceptSuggestion() {
         String selected = suggestionList.getSelectionModel().getSelectedItem();
@@ -128,20 +133,16 @@ public class AutocompleteController
             return;
         }
         String word = selected.split("\\s+")[0];
-        appendWord(word);
-        if (!lastLeadingWord.isEmpty()) {
+        if (suggester != null) {
+            word = suggester.acceptSuggestion(composeArea.getText(), word);
+        } else if (!lastLeadingWord.isEmpty()) {
             dataService.recordFollow(lastLeadingWord, word);
         }
+        appendWord(word);
         messageLabel.setText("Accepted \"" + word + "\"");
         notifyStatus();
     }
 
-    /**
-     * Adds an unknown word to the corpus and optionally appends it to the text.
-     *
-     * @author Ved Mahant
-     * @date 2026-10-16
-     */
     @FXML
     public void onAddUnknown() {
         String raw = unknownWordField.getText() == null ? "" : unknownWordField.getText().trim();
@@ -152,13 +153,19 @@ public class AutocompleteController
         }
         unknownWordField.getStyleClass().remove("field-error");
         try {
-            Word word = dataService.addOrIncrementWord(raw);
-            if (!lastLeadingWord.isEmpty()) {
-                dataService.recordFollow(lastLeadingWord, word.getText());
+            String word;
+            if (suggester != null) {
+                word = suggester.recordTypedWord(composeArea.getText(), raw);
+            } else {
+                Word created = dataService.addOrIncrementWord(raw);
+                word = created.getText();
+                if (!lastLeadingWord.isEmpty()) {
+                    dataService.recordFollow(lastLeadingWord, word);
+                }
             }
-            appendWord(word.getText());
+            appendWord(word);
             unknownWordField.clear();
-            messageLabel.setText("Added \"" + word.getText() + "\" (freq " + word.getFrequency() + ")");
+            messageLabel.setText("Added \"" + word + "\"");
             notifyStatus();
             onTextChanged(composeArea.getText());
         } catch (IllegalArgumentException ex) {
@@ -187,6 +194,14 @@ public class AutocompleteController
             idx--;
         }
         return trimmed.substring(idx + 1).toLowerCase();
+    }
+
+    private boolean endsWithTrigger(String text) {
+        if (text == null || text.isEmpty()) {
+            return false;
+        }
+        char c = text.charAt(text.length() - 1);
+        return c == ' ' || c == '.' || c == ',';
     }
 
     private void notifyStatus() {
