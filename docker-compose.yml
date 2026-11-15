@@ -1,0 +1,25 @@
+# Local MySQL 8 for Sentence Builder (Team 22)
+# Author: Nirav Rohra
+# Date: 2026-10-16
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: sentence-builder-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: sentence_builder
+      MYSQL_USER: sentence
+      MYSQL_PASSWORD: sentence
+    volumes:
+      - sb_mysql_data:/var/lib/mysql
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  sb_mysql_data:

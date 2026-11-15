@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.*?>
+<VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.utdallas.cs4485.team22.sentencebuilder.ui.WordEditorController" styleClass="screen" spacing="20">
+    <padding>
+        <Insets top="24" right="28" bottom="28" left="28" />
+    </padding>
+    <HBox spacing="22" alignment="CENTER_LEFT" styleClass="hero-card">
+        <VBox spacing="12" styleClass="tool-header-copy" HBox.hgrow="ALWAYS">
+            <Label text="04 / THE WORD LIBRARY" styleClass="hero-kicker" wrapText="true" />
+            <Label text="Every word has a story." styleClass="hero-title" wrapText="true" />
+            <Label text="Explore frequencies and sentence roles. Filter the vocabulary, then select a word to edit its metadata." styleClass="hero-subtitle" wrapText="true" />
+        </VBox>
+        <ImageView fitWidth="64" fitHeight="64" preserveRatio="true" accessibleText="UT Dallas logo">
+            <image>
+                <Image url="@../images/utd-logo.png" />
+            </image>
+        </ImageView>
+    </HBox>
+    <HBox spacing="18" VBox.vgrow="ALWAYS">
+        <VBox spacing="12" styleClass="surface-card" HBox.hgrow="ALWAYS" prefWidth="620">
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <TextField fx:id="filterField" promptText="Filter words..." HBox.hgrow="ALWAYS" />
+                <Button text="Refresh" onAction="#onRefresh" />
+            </HBox>
+            <TableView fx:id="wordTable" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colWord" text="Word" prefWidth="220" />
+                    <TableColumn fx:id="colFrequency" text="Frequency" prefWidth="110" />
+                    <TableColumn fx:id="colStart" text="Sentence start" prefWidth="120" />
+                    <TableColumn fx:id="colEnd" text="Sentence end" prefWidth="120" />
+                </columns>
+            </TableView>
+        </VBox>
+        <VBox spacing="12" styleClass="surface-card" prefWidth="330" minWidth="330">
+            <Label text="Edit selected word" styleClass="field-label" />
+            <GridPane hgap="12" vgap="8">
+                <columnConstraints>
+                    <ColumnConstraints minWidth="100" />
+                    <ColumnConstraints hgrow="ALWAYS" />
+                </columnConstraints>
+                <Label text="Word (read-only)" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                <TextField fx:id="editTextField" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                <Label text="Frequency" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                <TextField fx:id="editFreqField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                <CheckBox fx:id="editStartCheck" text="Used as sentence start" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                <CheckBox fx:id="editEndCheck" text="Used as sentence end" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+            </GridPane>
+            <HBox spacing="10">
+                <Button text="Save changes" styleClass="primary-button" onAction="#onSave" />
+            </HBox>
+            <Label fx:id="messageLabel" text="" styleClass="hint-label" />
+        </VBox>
+    </HBox>
+</VBox>

@@ -1,0 +1,8 @@
+.startup-root { -fx-background-color: radial-gradient(center 50% 40%, radius 80%, #215740, #08281f); -fx-padding: 32; -fx-font-family: "Segoe UI"; }
+.startup-kicker { -fx-text-fill: #eaa46a; -fx-font-size: 11px; -fx-font-weight: bold; }
+.startup-title { -fx-font-family: "Segoe UI Semibold"; -fx-text-fill: white; -fx-font-size: 36px; -fx-font-weight: bold; }
+.startup-pill { -fx-background-color: #ffffff0c; -fx-border-color: #ffffff16; -fx-border-radius: 20; -fx-background-radius: 20; -fx-padding: 8 16; -fx-text-fill: #b6d0bf; -fx-font-size: 9px; -fx-font-weight: bold; }
+.startup-status { -fx-text-fill: #f5e5d4; -fx-font-size: 14px; -fx-padding: 12 0 0 0; }
+.startup-detail { -fx-text-fill: #a1bdac; -fx-font-size: 12px; }
+.startup-retry { -fx-background-color: #bf5700; -fx-text-fill: white; -fx-border-color: #bf5700; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 11 24; -fx-font-weight: bold; }
+.startup-retry:hover { -fx-background-color: #a64b00; -fx-border-color: #a64b00; }
