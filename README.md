@@ -1,26 +1,26 @@
 # Sentence Builder – Team 22
 
-CS4485 Senior Design: a JavaFX application that imports public-domain text into **MySQL**, stores word / follower statistics, generates sentences with multiple algorithms, and offers next-word autocomplete.
+CS4485 Senior Design Project for Professor John Cole: A JavaFX application that imports text into **MySQL**, stores words, statistics, generates sentences with multiple algorithms, and offers next word autocompletion.
 
 ## Team
 
-| Member | Role |
+| Member | Responsibility  |
 |--------|------|
-| Ved Mahant | Project Manager / User Interface Lead |
-| Nirav Rohra | Technical Lead / Database / Integration |
-| Umair Malik | Generation Algorithms / Configuration Manager |
-| Ahmed Sherwani | QA / Text Import / Reporting |
+| Ved Mahant | JavaFX, database implementation, and book importer UI   |
+| Nirav Rohra | JavaFX, database implementation,and book importer UI   |
+| Umair Malik |Algorithm generation, database implementation, and book importer UI    |
+| Ahmed Sherwani | Database implementation, book importer, and algorithm generation|
 
 ## Features (work packages)
 
-- **WP3** – MySQL schema + ER notes (`db/schema.sql`, `db/ER.md`)
-- **WP4** – JDBC data access (`JdbcDataService`, `DatabaseConnection`)
-- **WP5** – Text import with progress + tokenizer
-- **WP6** – Probability-weighted, most-frequent, and random-walk generation (+ batch feedback into corpus)
-- **WP7** – JavaFX screens (Import, Generate, Autocomplete, Word Editor, Reports)
-- **WP8–WP9** – Autocomplete follow recording; word editor; reports with duplicate flags
+-  MySQL schema + ER notes (`db/schema.sql`, `db/ER.md`)
+– JDBC data access (`JdbcDataService`, `DatabaseConnection`)
+– Text import with progress + tokenizer
+– Probability-weighted, most-frequent, and random-walk generation (+ batch feedback into corpus)
+– JavaFX screens (Import, Generate, Autocomplete, Word Editor, Reports)
+– Autocomplete follow recording; word editor; reports with duplicate flags
 
-If MySQL is down, the app **falls back** to an in-memory stub so demos still work.
+If MySQL is down, the app **falls back** to an in memory stub so demos still work.
 
 ## Requirements
 
@@ -30,16 +30,23 @@ If MySQL is down, the app **falls back** to an in-memory stub so demos still wor
 
 ## Run the application
 
-Without AWS RDS MySQL the app uses the in-memory stub automatically. With MySQL running and credentials matching `application.properties`, it uses JDBC. Cd into the project root and run:
+Without AWS RDS MySQL the app uses the in memory stub automatically. With MySQL running and credentials matching `application.properties`, it uses JDBC. Cd into the project root and run:
 
 ```bash
 mvn -version
-DB_PREFER_JDBC=false mvn clean javafx:run
+mvn clean javafx:run
 ```
 
 ### Connect to AWS RDS MySQL database
+To get credentials for database reach out to the team or Ahmed Sherwani.
+Default JDBC settings to connect to database is in `application.properties`: host `localhost`, port `3306`, database `sentence_builder`, user `sentence`, password `sentence`. To run with database do:
 
-Default JDBC settings to connect to database is in `application.properties`: host `localhost`, port `3306`, database `sentence_builder`, user `sentence`, password `sentence`. To get credentials for database reach out to the team or Ahmed Sherwani.
+
+```bash
+mvn -version
+DB_PREFER_JDBC=true mvn clean javafx:run
+```
+
 
 ### Keyboard shortcuts
 
@@ -62,7 +69,6 @@ sentence-builder/
   db/schema.sql          MySQL DDL
   db/ER.md               Entity-relationship overview
   docker-compose.yml     Local MySQL 8
-  data/sample-corpus.txt Test text
   src/main/java/.../
     SentenceBuilderApp.java
     db/                  DatabaseConfig, DatabaseConnection

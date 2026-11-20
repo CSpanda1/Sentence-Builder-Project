@@ -40,8 +40,7 @@
             <Label text="A strong corpus starts here" styleClass="section-title" wrapText="true" />
             <Label text="TXT" styleClass="file-badge" wrapText="true" />
             <Label text="Plain text. Rich patterns." styleClass="guide-title" wrapText="true" />
-            <Label text="Choose your own .txt file, or try the included sample to see how importing works." styleClass="guide-copy" wrapText="true" />
-            <Button text="Use sample text" onAction="#onSample" maxWidth="Infinity" fx:id="sampleButton" />
+            <Label text="Choose your own .txt file." styleClass="guide-copy" wrapText="true" />
             <Label text="BEFORE YOU IMPORT" styleClass="metric-label" wrapText="true" />
             <Label text="Remove book headers and footers.&#10;&#10;Keep sentence punctuation.&#10;&#10;Use text you have permission to use." styleClass="guide-copy" wrapText="true" />
             <Label text="NEXT UP" styleClass="metric-label" wrapText="true" />

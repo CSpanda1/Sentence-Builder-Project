@@ -67,7 +67,7 @@ public final class HomeController implements MainController.Refreshable {
         HBox section=new HBox(12,text("Where will your words take you?","section-title"),new Region(),text("THREE WAYS TO EXPLORE","section-eyebrow"));
         HBox.setHgrow(section.getChildren().get(1),Priority.ALWAYS);section.setAlignment(Pos.CENTER_LEFT);root.getChildren().add(section);
         HBox entries=new HBox(14,
-                entry("01  /  BUILD","Bring your own words","Teach the app with a book, article, or the included sample text.","Import corpus  →",imports),
+                entry("01  /  BUILD","Bring your own words","Teach the app with a book or article.","Import corpus  →",imports),
                 entry("02  /  DISCOVER","Let patterns surprise you","Explore three algorithms and compare the sentences they create.","Open generator  →",generate),
                 entry("03  /  WRITE","Find your next word","Compose with suggestions based on the words in your corpus.","Start composing  →",compose));
         root.getChildren().add(entries);
