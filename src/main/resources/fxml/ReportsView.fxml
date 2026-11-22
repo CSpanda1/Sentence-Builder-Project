@@ -1,4 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--*****************************************************************************************************************
+ * ReportsView.fxml
+ *
+ * Defines the Reports screen with corpus totals and history tabs for
+ * imported files and generated sentences. It also displays the
+ * duplicate sentence count and the latest import.
+ *
+ * AI Assistance: ChatGPT codex was used to generate some methods
+ * Written by: Ved Mahant(VXM220098) and Nirav Rohra(NXR220063) at the University of Texas at Dallas starting October 16th, 2026.
+ ******************************************************************************************************************-->
+
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>

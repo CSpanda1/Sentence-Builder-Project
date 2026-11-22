@@ -1,4 +1,23 @@
+/*****************************************************************************************************************
+ * app.css
+ *
+ * Defines the shared JavaFX theme for the Sentence Builder workspace.
+ * Styles navigation, input controls, reports, and the Overview screen
+ * using the UT Dallas-inspired palette.
+ *
+ * AI Assistance: ChatGPT Codex
+ * Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 22th, 2026.
+ ******************************************************************************************************************/
+
 /* UT Dallas inspired desktop workspace: evergreen, burnt orange and warm white. */
+
+/*
+ * Base workspace theme
+ *
+ * Prompt:  Set the default font, canvas color, accent, and focus colors for
+ * the JavaFX workspace.
+ * Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 22th, 2026.
+ */
 .root-pane { -fx-background-color: #f4f6f5; -fx-font-family: "Segoe UI"; -fx-font-size: 13px; -fx-accent: #154734; -fx-focus-color: #b95612; -fx-faint-focus-color: #e8750022; }
 .label { -fx-text-fill: #253c32; }
 .sidebar { -fx-background-color: #154734; -fx-border-color: #e87500; -fx-border-width: 5 0 0 0; }
@@ -6,8 +25,19 @@
 .brand-title { -fx-text-fill: white; -fx-font-size: 21px; -fx-font-weight: bold; -fx-padding: 0 0 2 8; }
 .brand-subtitle { -fx-text-fill: #c1d3c9; -fx-font-size: 11px; -fx-padding: 0 0 16 8; }
 .sidebar .hint-label { -fx-text-fill: #c1d3c9; -fx-padding: 0 0 0 8; }
+
+/*
+ * Shared buttons and navigation states
+ *
+ * Prompt:  Style default buttons and primary actions, then give sidebar
+ * navigation distinct hover and selected states.
+ * Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 22th, 2026.
+ */
 .button { -fx-background-color: white; -fx-text-fill: #154734; -fx-border-color: #d3ddd7; -fx-border-radius: 7; -fx-background-radius: 7; -fx-padding: 10 16; -fx-cursor: hand; -fx-font-weight: bold; }
 .button:hover { -fx-background-color: #e9f1ec; -fx-border-color: #92ac9d; }
+/* Reduce padding to offset the thicker keyboard-focus border.
+ Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 22th, 2026.
+ */
 .button:focused { -fx-border-color: #b95612; -fx-border-width: 2; -fx-padding: 9 15; }
 .button:disabled { -fx-opacity: 0.45; }
 .nav-button { -fx-background-color: transparent; -fx-text-fill: #deebe4; -fx-border-color: transparent; -fx-alignment: CENTER_LEFT; -fx-padding: 13 12; -fx-font-weight: normal; }
@@ -15,6 +45,14 @@
 .nav-button.nav-active { -fx-background-color: #fff5eb; -fx-text-fill: #154734; -fx-border-color: #fff5eb; -fx-font-weight: bold; }
 .primary-button { -fx-background-color: #154734; -fx-text-fill: white; -fx-border-color: #154734; }
 .primary-button:hover { -fx-background-color: #216448; -fx-border-color: #216448; }
+
+/*
+ * Screen surfaces and form controls
+ *
+ * Prompt:  Keep scrollable feature screens on a common canvas and style
+ * headings, inputs, focus borders, and validation errors consistently.
+ * Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 22th, 2026.
+ */
 .content-pane, .screen-scroll, .screen-scroll > .viewport { -fx-background-color: #f4f6f5; }
 .screen-scroll { -fx-padding: 0; -fx-background-insets: 0; }
 .screen { -fx-background-color: #f4f6f5; }
@@ -27,24 +65,51 @@
 .text-field:focused, .text-area:focused, .combo-box:focused, .spinner:focused { -fx-border-color: #b95612; }
 .text-area .content { -fx-background-color: white; -fx-background-radius: 7; }
 .text-area { -fx-font-size: 14px; }
+/* Mark invalid fields independently of keyboard focus.
+ Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 22th, 2026.*/
 .field-error { -fx-border-color: #a43124; -fx-border-width: 2; }
+
+/*
+ * Tables and lists
+ *
+ * Prompt:  Style table headers, alternating rows, list cells, and selection
+ * highlights for readable corpus data.
+ * Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 22th, 2026.
+ */
 .table-view, .list-view { -fx-background-color: white; -fx-border-color: #d7e1da; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 4; }
 .table-view .column-header-background, .table-view .column-header, .table-view .filler { -fx-background-color: #e9f0eb; }
 .table-view .column-header { -fx-padding: 10 6; -fx-border-color: transparent #d7e1da transparent transparent; }
 .table-view .column-header .label { -fx-alignment: CENTER_LEFT; -fx-font-weight: bold; -fx-text-fill: #154734; }
 .table-row-cell { -fx-background-color: white; -fx-cell-size: 38px; -fx-border-color: transparent transparent #eef2ef transparent; }
+/* Alternate table-row backgrounds to separate adjacent records.
+ Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 22th, 2026.
+ */
 .table-row-cell:odd { -fx-background-color: #f7faf8; }
 .table-row-cell:selected { -fx-background-color: #dcebe1; }
 .table-row-cell:selected .text { -fx-fill: #154734; }
 .table-cell { -fx-padding: 9 8; -fx-border-color: transparent; }
 .list-cell { -fx-background-color: white; -fx-padding: 13 14; -fx-text-fill: #253c32; -fx-border-color: transparent transparent #eef2ef transparent; }
 .list-cell:filled:hover { -fx-background-color: #f1f6f3; }
+/* Highlight selected list cells that contain a result.
+Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 22th, 2026.
+*/
 .list-cell:filled:selected { -fx-background-color: #dcebe1; -fx-text-fill: #154734; }
+
+/*
+ * Status, tabs, and utility controls
+ *
+ * Prompt:  Style the application status strip, report tabs, progress
+ * indicators, scrollbars, and selected checkboxes.
+ * Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 22th, 2026.
+ */
 .status-bar { -fx-background-color: white; -fx-border-color: #d7e1da; -fx-border-width: 1 0 0 0; }
 .status-label { -fx-text-fill: #405b4b; -fx-font-size: 12px; }
 .stat-line { -fx-font-size: 17px; -fx-text-fill: #154734; -fx-padding: 14 18; -fx-background-color: white; -fx-background-radius: 8; -fx-max-width: Infinity; }
 .tab-pane .tab-header-background { -fx-background-color: transparent; }
 .tab-pane .tab { -fx-background-color: #e5ece7; -fx-padding: 10 16; -fx-background-radius: 6 6 0 0; }
+/* Mark the active tab with an orange top border in the base theme.
+Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 22th, 2026.
+*/
 .tab-pane .tab:selected { -fx-background-color: white; -fx-border-color: #e87500 transparent transparent transparent; -fx-border-width: 3 0 0 0; }
 .tab-content { -fx-background-color: transparent; }
 .progress-bar .bar { -fx-background-color: #e87500; -fx-background-radius: 8; -fx-background-insets: 0; }
@@ -55,6 +120,14 @@
 .check-box:selected .mark { -fx-background-color: #154734; }
 
 /* Second edition: editorial headers, dashboard metrics, and grouped work surfaces. */
+
+/*
+ * Workspace toolbar and sidebar refinements
+ *
+ * Prompt:  Refine the workspace canvas, add a toolbar and connection badge,
+ * and update sidebar branding and navigation states.
+ * Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 22th, 2026.
+ */
 .root-pane { -fx-background-color: #edf2ef; -fx-font-size: 13px; }
 .workspace-bar { -fx-padding: 15 24; -fx-background-color: white; -fx-border-color: #dce5df; -fx-border-width: 0 0 1 0; }
 .toolbar-brand { -fx-text-fill: #154734; -fx-font-size: 11px; -fx-font-weight: bold; }
@@ -73,7 +146,16 @@
 .sidebar-note { -fx-background-color: #ffffff0b; -fx-background-radius: 12; -fx-padding: 16; -fx-spacing: 9; -fx-border-color: #ffffff12; -fx-border-radius: 12; }
 .sidebar-note-title { -fx-text-fill: #ffe4c9; -fx-font-size: 13px; -fx-font-weight: bold; }
 .sidebar-note-copy { -fx-text-fill: #aac4b5; -fx-font-size: 11px; }
+/* Use the same fill on both the scroller and its viewport. */
 .content-pane, .screen-scroll, .screen-scroll > .viewport, .screen { -fx-background-color: #edf2ef; }
+
+/*
+ * Feature headers, cards, and empty states
+ *
+ * Prompt:  Create reusable hero headers and cards for tool controls, metrics,
+ * import guidance, and empty reports.
+ * Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 22th, 2026.
+ */
 .hero-card { -fx-background-color: linear-gradient(to right, #154734, #24634c); -fx-padding: 24 28; -fx-background-radius: 16; -fx-spacing: 8; -fx-min-height: 142; -fx-effect: dropshadow(gaussian, #173e2412, 16, 0, 0, 5); }
 .hero-kicker { -fx-text-fill: #ffb570; -fx-font-size: 10px; -fx-font-weight: bold; }
 .hero-title { -fx-text-fill: white; -fx-font-size: 29px; -fx-font-weight: bold; }
@@ -92,6 +174,14 @@
 .empty-title { -fx-text-fill: #294e3c; -fx-font-size: 20px; -fx-font-weight: bold; }
 .primary-button { -fx-background-color: #e87500; -fx-border-color: #e87500; -fx-text-fill: white; -fx-background-radius: 8; -fx-border-radius: 8; }
 .primary-button:hover { -fx-background-color: #ca6200; -fx-border-color: #ca6200; }
+
+/*
+ * Feature control refinements
+ *
+ * Prompt:  Refine tables, tabs, combo boxes, spinners, and the status strip
+ * while keeping the base control styles.
+ * Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 22th, 2026.
+ */
 .table-view, .list-view { -fx-border-color: #e6ece8; -fx-effect: none; }
 .table-view .column-header-background, .table-view .column-header, .table-view .filler { -fx-background-color: #f4f7f5; }
 .table-view .column-header .label { -fx-font-size: 11px; -fx-text-fill: #718579; }
@@ -102,11 +192,20 @@
 .tab-pane .tab:selected .tab-label { -fx-text-fill: #154734; -fx-font-weight: bold; }
 .tab-pane .tab .tab-label { -fx-text-fill: #7a8c80; -fx-font-size: 12px; }
 .combo-box .list-cell { -fx-padding: 4 8; -fx-background-color: transparent; -fx-border-color: transparent; }
+/* Let the spinner skin handle spacing around the field and arrow buttons. */
 .spinner { -fx-padding: 0; }
 .status-bar { -fx-background-color: #f8faf9; }
 .status-label { -fx-text-fill: #7c8b82; -fx-font-size: 11px; }
 
 /* UTD Language Lab: welcome experience and purposeful interaction details. */
+
+/*
+ * Overview welcome and navigation cards
+ *
+ * Prompt:  Style the Overview welcome panel and its action cards, with
+ * distinct spacing and keyboard-focus states.
+ * Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 22th, 2026.
+ */
 .welcome-hero { -fx-background-color: linear-gradient(to right, #0b3025, #18523d); -fx-padding: 30 32; -fx-background-radius: 20; -fx-border-color: #376e50; -fx-border-width: 0 0 3 0; -fx-border-radius: 20; -fx-effect: dropshadow(gaussian, #09251d20, 22, 0, 0, 6); }
 .welcome-copy { -fx-spacing: 11; }
 .welcome-title { -fx-font-family: "Segoe UI Semibold"; -fx-text-fill: #ffffff; -fx-font-size: 39px; -fx-font-weight: bold; -fx-line-spacing: -3; }
@@ -118,14 +217,24 @@
 .section-eyebrow { -fx-text-fill: #738b7b; -fx-font-size: 9px; -fx-font-weight: bold; }
 .entry-card { -fx-background-color: white; -fx-background-radius: 14; -fx-border-color: #dce7df; -fx-border-radius: 14; -fx-padding: 20; -fx-alignment: TOP_LEFT; -fx-content-display: GRAPHIC_ONLY; -fx-effect: dropshadow(gaussian, #1533220b, 12, 0, 0, 4); }
 .entry-card:hover { -fx-background-color: #fffaf4; -fx-border-color: #eab37b; -fx-effect: dropshadow(gaussian, #67410b18, 18, 0, 0, 5); }
+/* Keep the card content aligned when keyboard focus thickens its border. */
 .entry-card:focused { -fx-border-color: #ad4f00; -fx-border-width: 2; -fx-padding: 19; }
 .action-content { -fx-spacing: 10; }
 .action-number { -fx-text-fill: #ae5a18; -fx-font-size: 10px; -fx-font-weight: bold; }
 .action-title { -fx-text-fill: #184632; -fx-font-size: 18px; -fx-font-weight: bold; }
 .action-description { -fx-text-fill: #647e6d; -fx-font-size: 12px; -fx-font-weight: normal; }
 .action-link { -fx-text-fill: #a74f0d; -fx-font-size: 12px; -fx-padding: 6 0 0 0; -fx-font-weight: bold; }
+
+/*
+ * Navigation icons and compact tool headings
+ *
+ * Prompt:  Align sidebar icons, add an orange active-item marker, and tighten
+ * the tool headers and metric cards.
+ * Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 22th, 2026.
+ */
 .nav-icon { -fx-text-fill: #b8d1c3; -fx-font-size: 20px; -fx-min-width: 25; -fx-alignment: CENTER; }
 .nav-button { -fx-graphic-text-gap: 12; -fx-padding: 10 13; -fx-font-size: 13px; }
+/* Offset the active marker with reduced left padding. */
 .nav-button.nav-active { -fx-border-color: transparent transparent transparent #f18a32; -fx-border-width: 0 0 0 3; -fx-padding: 10 13 10 10; }
 .nav-button.nav-active .nav-icon { -fx-text-fill: #ffb36f; }
 .help-button { -fx-background-color: transparent; -fx-border-color: #dce6de; -fx-font-size: 11px; -fx-padding: 7 12; }
@@ -134,6 +243,14 @@
 .hero-card { -fx-min-height: 126; -fx-padding: 22 26; }
 .metric-card { -fx-padding: 16 18; -fx-spacing: 6; }
 .metric-value { -fx-font-family: "Segoe UI Semibold"; -fx-font-size: 30px; }
+
+/*
+ * Overview sentence preview and vocabulary ranking
+ *
+ * Prompt:  Style the latest-sentence preview, text-link buttons, and
+ * relative-frequency bars on the Overview screen.
+ * Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 22th, 2026.
+ */
 .story-card { -fx-background-color: #fff2df; -fx-border-color: #eddbc1; -fx-border-radius: 14; -fx-background-radius: 14; -fx-padding: 22; -fx-spacing: 15; }
 .preview-sentence { -fx-text-fill: #254933; -fx-font-size: 21px; -fx-font-family: "Georgia"; -fx-line-spacing: 5; }
 .text-button { -fx-background-color: transparent; -fx-border-color: transparent; -fx-text-fill: #a34b0b; -fx-padding: 6 0; -fx-font-size: 12px; -fx-alignment: CENTER_LEFT; }
@@ -141,11 +258,23 @@
 .rank-word { -fx-text-fill: #355d46; -fx-font-weight: bold; -fx-font-size: 12px; }
 .rank-count { -fx-text-fill: #7a8f80; -fx-font-size: 11px; }
 .frequency-bar { -fx-pref-height: 9; -fx-min-height: 9; }
+/* Use a neutral track behind the filled frequency segment. */
 .frequency-bar .track { -fx-background-color: #edf3ee; -fx-background-insets: 0; }
 .frequency-bar .bar { -fx-background-color: linear-gradient(to right, #217148, #e58531); -fx-padding: 4; }
+
+/*
+ * Generator feedback and final spacing adjustments
+ *
+ * Prompt:  Style algorithm guidance and result counts, deepen the primary
+ * action color, and tighten the sidebar and welcome panel spacing.
+ * Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 22th, 2026.
+ */
 .algorithm-hint { -fx-background-color: #eef5ef; -fx-background-radius: 7; -fx-padding: 9 12; -fx-font-size: 11px; -fx-text-fill: #4d6b56; }
 .result-count { -fx-text-fill: #6d8374; -fx-font-size: 11px; }
 .button:focused { -fx-border-color: #ad4f00; }
+/* Set the final primary action palette after the earlier shared overrides.
+ Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 22th, 2026.
+ */
 .primary-button { -fx-background-color: #bf5700; -fx-border-color: #bf5700; }
 .primary-button:hover { -fx-background-color: #a94c00; -fx-border-color: #a94c00; }
 .sidebar { -fx-spacing: 6; }

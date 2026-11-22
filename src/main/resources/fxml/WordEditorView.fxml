@@ -1,4 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--*****************************************************************************************************************
+ * WordEditorView.fxml
+ *
+ * Defines the Word library with a vocabulary filter, a word table,
+ * and controls for editing the selected word’s frequency and
+ * sentence-boundary flags. The word text is read-only.
+ *
+ * AI Assistance: ChatGPT codex was used to generate some methods
+ * Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 16th, 2026.
+ ******************************************************************************************************************-->
+
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>

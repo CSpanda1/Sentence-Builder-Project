@@ -1,7 +1,7 @@
 # Sentence Builder – Entity Relationship Overview
 
-**Author:** Nirav Rohra  
-**Date:** 2026-10-16  
+**Author:** Nirav Rohra((NXR220063) S 4485 at the University of Texas at Dallas starting October 16th, 2026 
+**Date:** 10-16-2026  
 **Database:** `sentence_builder` (MySQL 8)
 
 ```mermaid

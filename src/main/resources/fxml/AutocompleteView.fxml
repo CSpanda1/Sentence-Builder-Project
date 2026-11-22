@@ -1,4 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--*****************************************************************************************************************
+ * AutocompleteView.fxml
+ *
+ * Defines the Compose screen with a text editor, a list of next-word
+ * suggestions, and controls for accepting a suggestion or adding
+ * an unknown word to the corpus.
+ *
+ * AI Assistance: ChatGPT codex was used to generate some methods
+ * Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 16th, 2026.
+ ******************************************************************************************************************-->
+
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>

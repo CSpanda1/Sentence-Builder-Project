@@ -39,7 +39,7 @@ mvn clean javafx:run
 
 ### Connect to AWS RDS MySQL database
 To get credentials for database reach out to the team or Ahmed Sherwani.
-Default JDBC settings to connect to database is in `application.properties`: host `localhost`, port `3306`, database `sentence_builder`, user `sentence`, password `sentence`. To run with database do:
+Default JDBC settings to connect to database is in `application.properties`. Location is src/main/resources: host `localhost`, port `3306`, database `sentence_builder`, user `sentence`, password `sentence`. To run with database do:
 
 
 ```bash
@@ -60,7 +60,7 @@ DB_PREFER_JDBC=true mvn clean javafx:run
 
 ### Try import
 
-To import a book visit https://www.gutenberg.org/ and select a book. Or use `data/sample-corpus.txt`. To import, navigate to the Import screen (Browse → Start Import). 
+To import a book visit https://www.gutenberg.org/ and select a book. To import, navigate to the Import screen (Browse → Start Import). 
 
 ## Project layout
 

@@ -1,5 +1,16 @@
 package edu.utdallas.cs4485.team22.sentencebuilder.ui;
 
+/*****************************************************************************************************************
+ * HomeController.java
+ *
+ * Builds the JavaFX overview and displays corpus totals, frequent words,
+ * and the latest generated sentence from the active data service.
+ * It loads these values in the background and links to the other screens.
+ *
+ * AI Assistance: ChatGPT codex was used to generate some methods
+ * Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 16th, 2026.
+ ******************************************************************************************************************/
+
 import edu.utdallas.cs4485.team22.sentencebuilder.model.Word;
 import edu.utdallas.cs4485.team22.sentencebuilder.service.DataService;
 import edu.utdallas.cs4485.team22.sentencebuilder.service.JdbcDataService;
@@ -14,51 +25,150 @@ import javafx.scene.layout.*;
 import java.util.Comparator;
 import java.util.List;
 
-/** Welcome workspace. All insight values come from the active data service. */
+
 public final class HomeController implements MainController.Refreshable {
+    // Provides overview data from the active MySQL or demo workspace.
     private final DataService service;
+    // Opens the corresponding workspace screens when navigation controls are clicked.
     private final Runnable imports, generate, compose, words, reports;
+    // Keeps references to the metric labels populated after each refresh.
     private final Label total = text("—", "metric-value"), unique = text("—", "metric-value"),
             sources = text("—", "metric-value"), sentences = text("—", "metric-value");
+    // Displays the latest generated sentence when history is available.
     private final Label latest = text("Generate a sentence to begin your story.", "preview-sentence");
+    // Reports loading, connection, or refresh status.
     private final Label state = text("Loading your workspace…", "guide-copy");
+    // Holds the frequency rows for the highest-ranked words.
     private final VBox rankings = new VBox(12);
+    // Tracks the most recent refresh request.
     private long revision;
+
+
+    /**
+     * Stores the active data service and the actions used to open each workspace screen.
+     *
+     * @param service source for overview metrics, vocabulary, and sentence history
+     * @param imports opens the import screen
+     * @param generate opens the generator
+     * @param compose opens the compose screen
+     * @param words opens the word library
+     * @param reports opens reports
+     *
+     * This method was created by ChatGPT codex
+     * Prompt: Create a HomeController constructor that accepts the active data
+     * service and navigation callbacks, and stores them for overview data and
+     * workspace-screen navigation.
+     *
+     * Written by: Ved Mahant(VXM220098) for CS 4485 at the University of Texas at Dallas starting October 16th, 2026.
+     */
     public HomeController(DataService service, Runnable imports, Runnable generate,
                           Runnable compose, Runnable words, Runnable reports) {
         this.service=service; this.imports=imports; this.generate=generate;
         this.compose=compose; this.words=words; this.reports=reports;
     }
+    /**
+     * Creates a styled label that wraps and keeps its preferred height.
+     *
+     * @param value label text
+     * @param style CSS class to apply
+     * @return configured label
+     *
+     * This method was created by ChatGPT codex
+     * Prompt: Create a static helper method that creates a JavaFX Label with
+     * the supplied text and CSS style, enables wrapping, and preserves its
+     * preferred height.
+     * Written by: Ved Mahant(VXM220098) for CS 4485 at the University of Texas at Dallas starting October 16th, 2026.
+     */
     private static Label text(String value, String style) {
         Label l = new Label(value); l.getStyleClass().add(style); l.setWrapText(true); l.setMinHeight(Region.USE_PREF_SIZE); return l;
     }
+    /**
+     * Groups child nodes in a styled vertical container.
+     *
+     * @param style CSS class to apply
+     * @param nodes children in display order
+     * @return configured vertical container
+     *
+     * This method was created by ChatGPT codex
+     * Prompt: Create a helper that groups the supplied JavaFX nodes in a VBox
+     * with 12 pixels of spacing and applies a CSS class.
+     *
+     * Written by: Ved Mahant(VXM220098) for CS 4485 at the University of Texas at Dallas starting October 16th, 2026.
+     */
     private static VBox box(String style, Node... nodes) {
         VBox v=new VBox(12, nodes); v.getStyleClass().add(style); return v;
     }
+    /**
+     * Creates a styled button for a navigation action.
+     *
+     * @param title button text
+     * @param run action to invoke on click
+     * @param style CSS class to apply
+     * @return configured button
+     *
+     * This method was created by ChatGPT codex
+     * Prompt: Create a styled JavaFX button that displays the supplied title
+     * and runs a navigation callback when clicked.
+     *
+     * Written by: Ved Mahant(VXM220098) for CS 4485 at the University of Texas at Dallas starting October 16th, 2026.
+     */
     private static Button action(String title, Runnable run, String style) {
         Button b=new Button(title); b.getStyleClass().add(style); b.setOnAction(e->run.run()); return b;
     }
+    /**
+     * Builds a navigation card with descriptive and accessible text.
+     *
+     * @param number card number and category label
+     * @param title card heading
+     * @param description card description
+     * @param end call-to-action text
+     * @param run action to invoke on click
+     * @return configured navigation card
+     *
+     * This method was created by ChatGPT codex
+     * Prompt: Build a navigation card that displays a heading, description,
+     * and link text, exposes an accessible name, and gives narrower cards more height for
+     * wrapping.
+     *
+     * Written by: Ved Mahant(VXM220098) for CS 4485 at the University of Texas at Dallas starting October 16th, 2026.
+     */
     private Button entry(String number, String title, String description, String end, Runnable run) {
         VBox content=box("action-content", text(number,"action-number"), text(title,"action-title"),
                 text(description,"action-description"),text(end,"action-link"));
         Button b=new Button(); b.setGraphic(content); b.setMaxWidth(Double.MAX_VALUE);
+        // Expose the card title and description to assistive technology.
         b.setAccessibleText(title+". "+description); b.setOnAction(e->run.run());
         b.getStyleClass().add("entry-card"); HBox.setHgrow(b,Priority.ALWAYS);
+        // Give narrow cards more height for wrapped text.
         b.setPrefWidth(300); b.setMinWidth(0); b.prefHeightProperty().bind(javafx.beans.binding.Bindings.when(b.widthProperty().lessThan(265)).then(202).otherwise(164)); b.minHeightProperty().bind(b.prefHeightProperty()); b.maxHeightProperty().bind(b.prefHeightProperty()); content.setMinWidth(0); content.prefWidthProperty().bind(b.widthProperty().subtract(42)); return b;
     }
+    /**
+     * Assembles the overview and places the controls populated by refresh().
+     *
+     * @return root container for the overview screen
+     *
+     * Prompt: Assemble the overview with a welcome panel, corpus counters,
+     * navigation cards, a vocabulary ranking, and a preview of the latest generated sentence.
+     *
+     * This method was created by ChatGPT codex
+     * Written by: Ved Mahant(VXM220098) for CS 4485 at the University of Texas at Dallas starting October 16th, 2026.
+     */
     public VBox build() {
         VBox root=new VBox(20); root.getStyleClass().add("screen"); root.setPadding(new Insets(24,28,28,28)); root.setMinHeight(Region.USE_PREF_SIZE);
+        // Build the welcome panel with quick links to generation and import.
         VBox heading=box("welcome-copy",text("UT DALLAS  /  SENTENCE BUILDER","hero-kicker"),
                 text("Small words.\nBig possibilities.","welcome-title"),
                 text("Discover how language connects. Build a corpus, follow its patterns, and turn probability into your next sentence.","hero-subtitle"));
         heading.setMaxWidth(620); heading.setMinHeight(Region.USE_PREF_SIZE); HBox.setHgrow(heading,Priority.ALWAYS);
         HBox buttons=new HBox(10,action("Start creating  →",generate,"primary-button"),action("Import a text",imports,"hero-secondary"));
         heading.getChildren().add(buttons);
+        // Load the university logo from the bundled application resources.
         ImageView logo=new ImageView(new Image(getClass().getResource("/images/utd-logo.png").toExternalForm()));
         logo.setFitWidth(162); logo.setFitHeight(162); logo.setPreserveRatio(true); logo.setAccessibleText("The University of Texas at Dallas logo");
         VBox emblem=box("emblem-panel",logo,text("BUILT AT UT DALLAS","emblem-caption"));emblem.setAlignment(Pos.CENTER);emblem.setMinWidth(180);
         HBox hero=new HBox(25,heading,new Region(),emblem);HBox.setHgrow(hero.getChildren().get(1),Priority.ALWAYS);
         hero.setAlignment(Pos.CENTER_LEFT); hero.getStyleClass().add("welcome-hero"); root.getChildren().add(hero);
+        // Lay out the four counters that refresh() updates.
         HBox metrics=new HBox(12);
         String[] labels={"WORDS IN YOUR CORPUS","DISTINCT WORDS","IMPORTED SOURCES","GENERATED SENTENCES"};
         Label[] values={total,unique,sources,sentences};
@@ -66,11 +176,13 @@ public final class HomeController implements MainController.Refreshable {
         root.getChildren().add(metrics);
         HBox section=new HBox(12,text("Where will your words take you?","section-title"),new Region(),text("THREE WAYS TO EXPLORE","section-eyebrow"));
         HBox.setHgrow(section.getChildren().get(1),Priority.ALWAYS);section.setAlignment(Pos.CENTER_LEFT);root.getChildren().add(section);
+        // Add navigation cards for the main workflows.
         HBox entries=new HBox(14,
                 entry("01  /  BUILD","Bring your own words","Teach the app with a book or article.","Import corpus  →",imports),
                 entry("02  /  DISCOVER","Let patterns surprise you","Explore three algorithms and compare the sentences they create.","Open generator  →",generate),
                 entry("03  /  WRITE","Find your next word","Compose with suggestions based on the words in your corpus.","Start composing  →",compose));
         root.getChildren().add(entries);
+        // Place the vocabulary ranking beside the latest generated sentence.
         VBox vocabulary=box("surface-card",text("The words shaping your corpus","section-title"),text("Most frequent words • length shows relative frequency","guide-copy"),rankings);
         vocabulary.getChildren().add(action("Explore word library  →",words,"text-button"));vocabulary.setPrefWidth(500);HBox.setHgrow(vocabulary,Priority.ALWAYS);
         VBox story=box("story-card",text("FROM YOUR GENERATOR","section-eyebrow"),latest,state,action("See sentence history  →",reports,"text-button"));
@@ -78,12 +190,26 @@ public final class HomeController implements MainController.Refreshable {
         HBox insight=new HBox(18,vocabulary,story);root.getChildren().add(insight);
         return root;
     }
+    /** A word and its frequency for the overview ranking. */
     private record Ranked(String word,int frequency) {}
+    /** Data collected by the background task for a single refresh. */
     private record Summary(int total,int unique,int files,int sentences,List<Ranked> ranked,String latest) {}
+    /**
+     * Loads overview data off the JavaFX application thread and displays the latest result.
+     *
+     * Prompt:Load corpus totals, the five most frequent words, and the
+     * latest sentence in a background task. Update the JavaFX overview only if the response
+     * belongs to the latest refresh.
+     *
+     * This method was created by ChatGPT codex
+     * Written by: Ved Mahant(VXM220098) for CS 4485 at the University of Texas at Dallas starting October 16th, 2026.
+     */
     @Override public void refresh() {
+        // Identify this refresh so a slower earlier request cannot overwrite it.
         final long ticket=++revision;
         Task<Summary> task=new Task<>() {
             @Override protected Summary call() {
+                // Read the vocabulary and sort by frequency, using word text to break ties.
                 var all=service.listWords(null);
                 var ranked=all.stream().sorted(Comparator.comparingInt(Word::getFrequency).reversed().thenComparing(Word::getText))
                         .limit(5).map(w->new Ranked(w.getText(),w.getFrequency())).toList();
@@ -92,12 +218,16 @@ public final class HomeController implements MainController.Refreshable {
                         history.isEmpty()?null:history.getFirst().getText());
             }
         };
+        // Apply the loaded summary on the JavaFX application thread.
         task.setOnSucceeded(e->{
+            // Ignore this response if a newer refresh has started.
             if(ticket!=revision)return; Summary s=task.getValue();
             total.setText(String.format("%,d",s.total));unique.setText(String.format("%,d",s.unique));
             sources.setText(String.format("%,d",s.files));sentences.setText(String.format("%,d",s.sentences));
+            // Show guidance when there is no sentence in history.
             latest.setText(s.latest==null?"Your next sentence starts with a single word.":"“"+s.latest+"”");
             state.setText(service instanceof JdbcDataService?"Connected to MySQL. Your corpus is stored in the database.":"Demo workspace • seeded vocabulary is ready to explore. Changes last until you close the app.");
+            // Replace the ranking rows and scale the bars to the highest frequency.
             rankings.getChildren().clear();
             int max=s.ranked.stream().mapToInt(Ranked::frequency).max().orElse(1);
             for(Ranked r:s.ranked) {
@@ -106,9 +236,12 @@ public final class HomeController implements MainController.Refreshable {
                 Label count=text(String.format("%,d",r.frequency),"rank-count");count.setMinWidth(45);count.setAlignment(Pos.CENTER_RIGHT);
                 HBox row=new HBox(10,word,bar,count);row.setAlignment(Pos.CENTER_LEFT);rankings.getChildren().add(row);
             }
+            // Show an import prompt when there are no words to rank.
             if(s.ranked.isEmpty())rankings.getChildren().add(text("No words yet. Import your first text to reveal its patterns.","guide-copy"));
         });
+        // Show the retry message only if this is still the latest refresh.
         task.setOnFailed(e->{if(ticket==revision)state.setText("Workspace insights could not load. Check your database connection, then reopen Overview to retry.");});
+        // Run the data queries in a background worker so the overview stays responsive.
         Thread worker=new Thread(task,"workspace-insights");worker.setDaemon(true);worker.start();
     }
 }

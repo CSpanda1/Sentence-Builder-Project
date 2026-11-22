@@ -1,4 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--*****************************************************************************************************************
+ * MainView.fxml
+ *
+ * Defines the main application layout with the toolbar, sidebar
+ * navigation, and a content area for the active tool. The status
+ * bar displays corpus totals and the latest import.
+ *
+ * AI Assistance: ChatGPT codex was used to generate some methods
+ * Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 16th, 2026.
+ ******************************************************************************************************************-->
+
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>

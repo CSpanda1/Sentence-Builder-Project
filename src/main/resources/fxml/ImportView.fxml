@@ -1,4 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--*****************************************************************************************************************
+ * ImportView.fxml
+ *
+ * Defines the corpus import screen with a file chooser, import and
+ * cancel controls, and a progress display. It also shows an import
+ * log and guidance for choosing a plain-text source.
+ *
+ * AI Assistance: ChatGPT codex was used to generate some methods
+ * Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 16th, 2026.
+ ******************************************************************************************************************-->
+
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>

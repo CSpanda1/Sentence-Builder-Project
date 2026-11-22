@@ -1,4 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--*****************************************************************************************************************
+ * GenerationView.fxml
+ *
+ * Defines the sentence generation screen with inputs for a starting
+ * word or phrase, follower algorithm, and word count. It displays
+ * session results and provides controls to copy or clear them.
+ *
+ * AI Assistance: ChatGPT codex was used to generate some methods
+ * Written by: Ved Mahant(VXM220098) at the University of Texas at Dallas starting October 16th, 2026.
+ ******************************************************************************************************************-->
+
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
@@ -11,7 +22,7 @@
         <VBox spacing="12" styleClass="tool-header-copy" HBox.hgrow="ALWAYS">
             <Label text="02 / THE GENERATOR" styleClass="hero-kicker" wrapText="true" />
             <Label text="A little probability. Endless possibilities." styleClass="hero-title" wrapText="true" />
-            <Label text="Choose a starting word, explore three algorithms, and see your corpus come to life." styleClass="hero-subtitle" wrapText="true" />
+            <Label text="Choose a starting word or phrase, explore three algorithms, and see your corpus come to life." styleClass="hero-subtitle" wrapText="true" />
         </VBox>
         <ImageView fitWidth="64" fitHeight="64" preserveRatio="true" accessibleText="UT Dallas logo">
             <image>
@@ -23,7 +34,7 @@
         <Label text="Set the direction" styleClass="section-title" wrapText="true" />
         <HBox spacing="12" alignment="CENTER_LEFT">
             <VBox spacing="4" HBox.hgrow="ALWAYS">
-                <Label text="Start word" styleClass="field-label" />
+                <Label text="Start word or phrase" styleClass="field-label" />
                 <TextField fx:id="startWordField" promptText="e.g. the" />
             </VBox>
             <VBox spacing="4">
@@ -31,7 +42,7 @@
                 <ComboBox fx:id="algorithmCombo" prefWidth="220" />
             </VBox>
             <VBox spacing="4">
-                <Label text="Max words" styleClass="field-label" />
+                <Label text="Word count" styleClass="field-label" />
                 <Spinner fx:id="lengthSpinner" prefWidth="100" />
             </VBox>
         </HBox>
