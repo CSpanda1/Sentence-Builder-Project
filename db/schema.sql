@@ -2,7 +2,7 @@
 -- Sentence Builder – Team 22
 -- MySQL 8 DDL (single source of truth for the schema)
 -- Author: Nirav Rohra(NXR220063), Ahmed Sherwani(AJS170005), and Umair Malik(UAM200000)
--- Date: 2026-10-16 for CS 4485 at the University of Texas at Dallas starting October 16th, 2026.
+-- for CS 4485 at the University of Texas at Dallas starting October 16th, 2026.
 --
 -- Tables: words, word_pairs, imported_files, generated_sentences, autocomplete_events
 -- =============================================================================
