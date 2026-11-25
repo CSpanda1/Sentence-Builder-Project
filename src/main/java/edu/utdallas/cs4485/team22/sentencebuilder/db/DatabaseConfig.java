@@ -188,6 +188,12 @@ public final class DatabaseConfig {
         return password;
     }
 
+    /**
+     * Returns whether to prefer JDBC.
+     * @return whether to prefer JDBC
+     *
+     * Written by: Nirav Rohra(NXR220063) and Ahmed Sherwani(AJS170005) for CS 4485 at the University of Texas at Dallas starting October 16, 2026.
+     */
     public boolean isPreferJdbc() {
         // Return whether to prefer JDBC.
         return preferJdbc;
